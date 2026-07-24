@@ -1,0 +1,6 @@
+# Never commit the generator's secret side-output
+_secret_answer.json
+__pycache__/
+*.pyc
+.pytest_cache/
+scratch_validate/
