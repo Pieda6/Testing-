@@ -7,10 +7,7 @@ private key is stored anywhere in the agent's image. The check is independent
 of the agent-writable corpus at /app/data.
 """
 import json
-import math
 import os
-
-import pytest
 
 # --- secp256k1 (self-contained; no dependency on agent-writable code) -------
 P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F
