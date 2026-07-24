@@ -1,0 +1,8 @@
+# Keep the build context minimal: only data/signatures.json is needed.
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/.pytest_cache/
+**/.DS_Store
+**/*.swp
+*.tar.gz
