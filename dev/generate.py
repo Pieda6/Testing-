@@ -9,6 +9,14 @@ same secret top `B_LEAK` bits (a stuck high-order prefix). The private key,
 the true prefix, and the nonces are the SECRET generation state and are NOT
 emitted. Only public material is written: curve name, public key Q, and the
 (h, r, s) signature triples.
+
+Parameter notes:
+  B_LEAK = 24 makes exhaustive search over the unknown prefix (2^24 ~ 16.8M
+  lattice reductions) infeasible within the agent budget, so the intended
+  differencing reduction is the only practical route.
+  M = 16 leaves a ~1.4x information margin over the ~11 signatures the lattice
+  minimally needs: the golden attack solves reliably, while an incorrectly
+  scaled lattice still fails.
 """
 import hashlib
 import json
@@ -17,10 +25,10 @@ import sys
 sys.path.insert(0, ".")
 from secp256k1 import N, G, scalar_mult, inv_mod, pubkey
 
-SEED = b"dynamo/ecdsa-nonce-lattice/v1"
+SEED = b"dynamo/ecdsa-nonce-lattice/v2"
 L = 255          # nonce bit-length (255 < N, so every nonce is a valid scalar)
-B_LEAK = 8       # shared secret high byte across all nonces (stuck-byte RNG fault)
-M = 60           # number of signatures emitted
+B_LEAK = 24      # shared secret high bits across all nonces (stuck 3-byte prefix)
+M = 16           # number of signatures emitted
 
 
 def det_rand_int(counter, nbits):
