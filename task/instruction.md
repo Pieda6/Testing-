@@ -39,5 +39,3 @@ Your submission is correct when all of the following hold:
 2. The recovered d is the actual private key: d·G equals the public key Q given
    in `signatures.json` (checked by independent scalar multiplication on the
    curve).
-
-You have 900 seconds to complete this task.
