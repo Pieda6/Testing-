@@ -1,77 +1,77 @@
 # dynamo/ecdsa-nonce-lattice
 
-A Terminal-Bench 2 (Harbor) cryptanalysis task. The agent is given a corpus of
-ECDSA/secp256k1 signatures produced by a faulty signer whose ephemeral nonces all
-share the same secret high bits, and must recover the signer's long-term private
-key.
+**Category:** Security / Cryptanalysis
 
 ## Overview
 
-- **Category / sub-category:** Security / Cryptanalysis.
-- **Problem:** recover the private key `d` from public signatures and the public
-  key `Q = d·G`.
-- **Deliverable:** `/app/result.json` = `{"private_key": "<hex>"}`.
+The agent audits an ECDSA (secp256k1) signing service with a faulty random number
+generator. It is given the public evidence in `/app/data/signatures.json` — the
+curve, the signer's public key `Q`, and 60 signature triples `(h, r, s)` — and must
+recover the signer's long-term private key `d`, writing it to `/app/result.json` as
+`{"private_key": "<hex>"}`.
 
-The corpus contains no nonce reuse, so the elementary two-signatures-share-a-nonce
-break does not apply. Instead the RNG fault is a **stuck high byte**: every nonce
-`k` is a 255-bit integer whose top 8 bits are the same unknown constant. This is a
-partial-nonce-leakage break in the same family as the real-world Minerva, TPM-FAIL,
-and LadderLeak attacks.
+The RNG fault is a stuck high byte: every ephemeral nonce is a 255-bit integer whose
+**top 8 bits are the same unknown constant**. This is partial nonce leakage, the same
+class of break as the real-world Minerva, TPM-FAIL, and LadderLeak attacks, and it is
+the daily work of an applied cryptanalyst auditing a signer.
 
-## Why it's hard
+## Approach
 
-Every widely documented biased-nonce lattice attack assumes the leaked high bits
-are **zero** ("short nonces"). Here they are a nonzero **unknown** shared constant,
-so the textbook lattice has no short vector at the true solution and returns a wrong
-key — which the agent can detect only if it bothers to check `d·G == Q`. The
-decisive, non-templated step is to **difference the signature equations** to cancel
-the unknown shared prefix, producing a standard Hidden Number Problem (HNP), then to
-build and correctly scale a Boneh–Venkatesan lattice with enough samples. Stating
-this in the instruction does not trivialize the task: the reduction and the lattice
-scaling are the real cryptanalytic work.
+The corpus contains no repeated `r`, so the elementary "two signatures shared a
+nonce" break does not apply. The intended solution is a Hidden Number Problem (HNP)
+lattice attack:
 
-## Approach (reference solution)
+1. Rewrite each signature as `k_i ≡ a_i + t_i·d (mod n)` with `a_i = s_i⁻¹h_i` and
+   `t_i = s_i⁻¹r_i`.
+2. Because every nonce shares the same unknown top bits, **difference the equations
+   against a pivot signature** to cancel that shared prefix, leaving
+   `(k_i − k_0) ≡ (a_i − a_0) + (t_i − t_0)d (mod n)` with `|k_i − k_0| < 2²⁴⁷`.
+3. Build a Boneh–Venkatesan lattice from the differenced pairs, scaling the residue
+   rows by `n // 2²⁴⁷` so the target vector is balanced.
+4. Run LLL, read `d` off the short vector, and confirm with `d·G == Q`.
 
-For each signature, `k_i ≡ a_i + t_i·d (mod n)` with `a_i = s_i⁻¹h_i`,
-`t_i = s_i⁻¹r_i`. Differencing against a pivot signature cancels the shared high
-part: `(k_i − k_0) ≡ (a_i − a_0) + (t_i − t_0)d (mod n)` with `|k_i − k_0| < 2²⁴⁷`.
-Build an HNP lattice from the differenced pairs, scale the residue rows by
-`n // 2²⁴⁷` so the target vector is balanced, run LLL, read `d` off the short
-vector, and confirm with `d·G == Q`. It runs in well under a second with `fpylll`.
-
-See `task/solution/solve.sh`.
+The decisive step is (2). Every widely documented biased-nonce lattice attack assumes
+the leaked high bits are *zero* ("short nonces"); here they are a nonzero **unknown**
+constant, so the textbook lattice has no short vector at the true solution and returns
+a wrong key. The reference solution (`task/solution/solve.py`, called by `solve.sh`)
+recovers the key in under a second with `fpylll`.
 
 ## Environment
 
-- Base image `python:3.13-slim-bookworm`, pinned by digest.
-- `fpylll` (LLL/BKZ) and `ecdsa` provided for the agent; `pytest` +
-  `pytest-json-ctrf` baked in for the verifier. No network needed at runtime.
-- Only the **public** corpus (`task/environment/data/signatures.json`) is copied
-  into the agent image — never the generator, seed, nonce prefix, or private key.
+`task/environment/Dockerfile` builds the single image used by both the agent and the
+verifier, from the pre-approved digest-pinned `python:3.13-slim-bookworm`. It bakes in
+`fpylll` (lattice reduction), `ecdsa`, and `pytest` + `pytest-json-ctrf`, all pinned,
+so the verifier installs nothing at verify time.
+
+Only the **public** corpus is copied into the image
+(`task/environment/data/signatures.json`). The private key, the nonce prefix, and the
+generator seed are never present — the dataset is synthetic and was generated
+deterministically from a fixed seed outside the task tree.
 
 ## Verification
 
-`task/tests/test_outputs.py` embeds only the signer's **public** key `Q` (immutable,
-public information) and independently recomputes `d·G` on secp256k1, asserting it
-equals `Q`. Because finding `d` with `d·G == Q` is the discrete-log problem itself,
-a false accept is impossible and no private key is stored in the image. The verifier
-also pins the output schema (JSON object; `private_key` must be a hex string
-decoding to `1 ≤ d < n`; JSON numbers / NaN / Infinity rejected) and opens the result
-path with `O_NOFOLLOW` to block symlink aliasing.
+`task/tests/test.sh` runs `task/tests/test_outputs.py` under pytest and writes `1`/`0`
+to `/logs/verifier/reward.txt`. Two tests map 1:1 to the two stated correctness
+conditions:
 
-## Reproducing the corpus
+1. **Schema** — `/app/result.json` is a JSON object whose `private_key` is a hex
+   *string* decoding to an integer `d` with `1 ≤ d < n` (JSON numbers, NaN, and
+   Infinity are rejected). The file is opened with `O_NOFOLLOW` so a symlinked output
+   path cannot alias another file.
+2. **Correctness** — the verifier independently recomputes `d·G` on secp256k1 and
+   asserts it equals the signer's public key `Q`.
 
-The dataset is generated deterministically (all randomness derives from SHA-256 of a
-fixed seed, so it is byte-identical on every platform):
+Ground truth is only the **public** key `Q`, embedded in the test file. No private key
+is stored anywhere in the image. Because finding `d` with `d·G == Q` is the discrete
+logarithm problem itself, a false accept is impossible and no tolerance is needed —
+grading is exact and deterministic.
+
+## Local calibration
 
 ```bash
-cd dev && python3 generate.py   # writes signatures.json (+ a dev-only secret file)
+harbor run -p task --agent oracle   # reward 1.0
+harbor run -p task --agent nop      # reward 0
 ```
 
-## Calibration
-
-- `harbor run -p task --agent oracle` → reward `1.0`.
-- `harbor run -p task --agent nop`    → reward `0`.
-
-Difficulty (≥ 4/8 valid failures with GPT-5.4 xhigh via Terminus-2) is confirmed at
-the Pass@8 stage.
+Adversarial cases also score 0: a wrong key, a numeric `private_key`, `NaN`, a
+decimal-encoded key, and a symlinked output path.
