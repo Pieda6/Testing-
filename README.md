@@ -56,7 +56,7 @@ Grading is all-or-nothing across all 60 tags; a 59-of-60 submission scores 0.
 
 `task/environment/Dockerfile` builds the single image used by both the agent and
 the verifier, from the pre-approved digest-pinned `python:3.13-slim-bookworm`. It
-bakes in `numpy`, `sympy`, `galois` and `pytest` + `pytest-json-ctrf`, all pinned,
+bakes in `numpy`, `sympy` and `pytest` + `pytest-json-ctrf`, all pinned,
 so the verifier installs nothing at verify time.
 
 Only the archive and the unsigned challenge records are copied into the image.

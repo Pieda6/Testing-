@@ -1,12 +1,12 @@
 FROM public.ecr.aws/docker/library/python@sha256:01f42367a0a94ad4bc17111776fd66e3500c1d87c15bbd6055b7371d39c124fb
 
-# General-purpose numeric/algebra tooling the agent may reach for, plus the test
-# runner baked in so the verifier installs nothing at grade time.
-# All wheels are prebuilt (manylinux); no compiler/build deps required.
+# General-purpose numeric/symbolic tooling the agent may reach for, plus the test
+# runner baked in so the verifier installs nothing at grade time. All of these
+# resolve to prebuilt cp313 manylinux wheels, so no compiler is needed. (galois
+# is deliberately absent: it pins numba<0.61, which has no Python 3.13 wheels.)
 RUN pip install --no-cache-dir \
         numpy==2.2.4 \
         sympy==1.13.3 \
-        galois==0.4.2 \
         pytest==8.3.5 \
         pytest-json-ctrf==0.5.3
 
