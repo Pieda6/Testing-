@@ -1,138 +1,117 @@
-"""Reference solver for dynamo/ecdsa-nonce-lattice.
+"""Reference solver for dynamo/legacy-tag-forge.
 
-Four mechanisms must all be handled or the lattice silently misses the target:
+The archive's tag function turns out to be affine over GF(2): every tag bit is
+the XOR of a fixed subset of the record's 128 input bits, optionally
+complemented. That is discoverable from the archive itself -- parity checks on
+triples of records hold, which no CRC-style or arithmetic construction would
+satisfy -- and once it is known, each of the 32 output bits is an independent
+linear system in 129 unknowns (128 mask bits plus one constant).
 
-  1. Each nonce is k = A_g + e with 0 <= e < 2^(W_g). A_g has full ~256-bit
-     entropy, so it cannot be guessed; it is cancelled algebraically by
-     differencing.
-  2. The base A_g is PER SESSION, so differencing is only valid between records
-     of the same session. A single global pivot mixes unrelated bases and the
-     resulting rows are not small.
-  3. Records flagged s_low_normalized store n - s_true, which describes -k
-     instead of +k; the normalisation is undone before use.
-  4. Each session has its OWN window WIDTH, so every differenced row carries its
-     own bound and must be scaled individually. No uniform K works: the widest
-     window starves the lattice of information, and any narrower choice is
-     violated by the true offsets of the wider sessions.
+Two things make a naive solve wrong rather than merely slow:
 
-The differenced system is a standard Hidden Number Problem, which a correctly
-scaled Boneh-Venkatesan lattice plus LLL then solves.
+  * A handful of archived rows carry corrupt tags. Plain elimination over all
+    rows can absorb a corrupt row into the pivot basis, silently producing a
+    wrong mask for that bit. The fix is to solve, measure the residual against
+    every row, and restart from a different offset when the residual is large.
+  * Grading is on held-out challenge records, so agreeing with the archive is
+    not evidence of correctness. Only the recovered rule generalises; a lookup
+    table over the samples does not.
 
-No seed, generator, or answer key is consulted -- only the public corpus at
-/app/data/signatures.json.
+No answer key is consulted -- only /app/data/samples.json.
 """
 import json
-from collections import defaultdict
 
-from fpylll import IntegerMatrix, LLL
-
-# --- secp256k1 (self-contained) -------------------------------------------
-P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F
-N = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
-GX = 0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798
-GY = 0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8
+FIELDS = ("serial", "batch", "model", "nonce")
+NBITS_IN = 128
+NU = NBITS_IN + 1          # 128 mask bits + constant, constant kept at bit 0
 
 
-def inv(x, m):
-    return pow(x % m, -1, m)
+def pack(rec):
+    """Pack the four 32-bit fields into one 128-bit integer, serial lowest."""
+    return (int(rec["serial"], 16)
+            | (int(rec["batch"], 16) << 32)
+            | (int(rec["model"], 16) << 64)
+            | (int(rec["nonce"], 16) << 96))
 
 
-def padd(a, b):
-    if a is None:
-        return b
-    if b is None:
-        return a
-    x1, y1 = a
-    x2, y2 = b
-    if x1 == x2 and (y1 + y2) % P == 0:
-        return None
-    if a == b:
-        lam = (3 * x1 * x1) * inv(2 * y1, P) % P
-    else:
-        lam = (y2 - y1) * inv(x2 - x1, P) % P
-    x3 = (lam * lam - x1 - x2) % P
-    return (x3, (lam * (x1 - x3) - y1) % P)
+def rref(rows):
+    """Reduced row echelon form over GF(2).
+
+    rows: iterable of (coef, rhs). Returns {pivot_bit: (coef, rhs)}.
+    """
+    piv = {}
+    for coef, rhs in rows:
+        v, b = coef, rhs
+        for p in sorted(piv, reverse=True):
+            if (v >> p) & 1:
+                pv, pb = piv[p]
+                v ^= pv
+                b ^= pb
+        if v == 0:
+            continue                      # dependent row (or a corrupt one)
+        p = v.bit_length() - 1
+        for q in list(piv):
+            pv, pb = piv[q]
+            if (pv >> p) & 1:
+                piv[q] = (pv ^ v, pb ^ b)
+        piv[p] = (v, b)
+    return piv
 
 
-def mul(k, pt):
-    k %= N
-    r = None
-    a = pt
-    while k:
-        if k & 1:
-            r = padd(r, a)
-        a = padd(a, a)
-        k >>= 1
-    return r
-
-
-G = (GX, GY)
-
-
-def equations(sigs, widths):
-    """Return differenced (A, T, K) lists, where K_i bounds row i's offset."""
-    a, t = {}, {}
-    for j, sg in enumerate(sigs):
-        s = int(sg["s"], 16)
-        if sg["s_low_normalized"]:
-            s = (N - s) % N            # mechanism 3: undo the normalisation
-        si = inv(s, N)
-        a[j] = si * int(sg["h"], 16) % N
-        t[j] = si * int(sg["r"], 16) % N
-
-    by_session = defaultdict(list)
-    for j, sg in enumerate(sigs):
-        by_session[sg["session"]].append(j)
-
-    A, T, K = [], [], []
-    for g, idxs in sorted(by_session.items()):
-        pivot = idxs[0]                # mechanism 2: pivot within the session
-        bound = 1 << widths[str(g)]    # mechanism 4: this session's own width
-        for j in idxs[1:]:
-            A.append((a[j] - a[pivot]) % N)
-            T.append((t[j] - t[pivot]) % N)
-            K.append(bound)
-    return A, T, K
-
-
-def recover(pub):
-    Q = (int(pub["public_key"]["x"], 16), int(pub["public_key"]["y"], 16))
-    A, T, K = equations(pub["signatures"], pub["session_window_bits"])
-    m = len(A)
-
-    # Balanced Boneh-Venkatesan lattice. Each residue column is scaled by its
-    # OWN factor F_i = N // K_i, so every coordinate of the target vector is
-    # ~N regardless of which session the row came from.
-    F = [N // k for k in K]
-    dim = m + 2
-    Bm = IntegerMatrix(dim, dim)
-    for i in range(m):
-        Bm[i, i] = F[i] * N
-    for i in range(m):
-        Bm[m, i] = F[i] * T[i]
-    Bm[m, m] = 1
-    for i in range(m):
-        Bm[m + 1, i] = F[i] * A[i]
-    Bm[m + 1, m + 1] = N
-    LLL.reduction(Bm)
-
-    # The private key appears (up to sign) as the m-th coordinate of a short row.
-    for row in Bm:
-        for cand in (row[m] % N, (-row[m]) % N):
-            if cand and mul(cand, G) == Q:
-                return cand
-    return None
+def solve_bit(rows_all):
+    """Recover one output bit's affine form; returns (coef_vector, residual)."""
+    best = None
+    # Deterministic restarts, so a corrupt row landing in the basis is escaped.
+    for off in (0, 137, 251, 313, 41, 199):
+        rot = rows_all[off:] + rows_all[:off]
+        piv = rref(rot)
+        if len(piv) != NU:
+            continue                      # not yet full rank from this offset
+        sol = 0
+        for p, (v, b) in piv.items():
+            if v == (1 << p) and b:
+                sol |= (1 << p)
+        residual = sum(1 for c, r in rows_all
+                       if (bin(c & sol).count("1") & 1) != r)
+        if best is None or residual < best[1]:
+            best = (sol, residual)
+        if residual == 0:
+            break
+    if best is None:
+        raise SystemExit("archive does not determine the tag function")
+    return best
 
 
 def main():
-    with open("/app/data/signatures.json") as f:
-        pub = json.load(f)
-    d = recover(pub)
-    if d is None:
-        raise SystemExit("lattice attack failed to recover the key")
-    with open("/app/result.json", "w") as f:
-        json.dump({"private_key": hex(d)}, f)
-    print("recovered private key -> /app/result.json")
+    with open("/app/data/samples.json") as f:
+        samples = json.load(f)["records"]
+    with open("/app/data/challenge.json") as f:
+        chal = json.load(f)
+    challenge = chal["records"]
+    nbits_out = chal["tag_bits"]
+
+    # Constant term is carried as bit 0, so the input vector is (x << 1) | 1.
+    vecs = [(pack(r) << 1) | 1 for r in samples]
+    tags = [int(r["tag"], 16) for r in samples]
+
+    sols = []
+    for j in range(nbits_out):
+        rows = [(vecs[i], (tags[i] >> j) & 1) for i in range(len(samples))]
+        sol, _ = solve_bit(rows)
+        sols.append(sol)
+
+    out = []
+    for r in challenge:
+        x = (pack(r) << 1) | 1
+        t = 0
+        for j, sol in enumerate(sols):
+            if bin(x & sol).count("1") & 1:
+                t |= (1 << j)
+        out.append("0x%08x" % t)
+
+    with open("/app/tags.json", "w") as f:
+        json.dump({"tags": out}, f)
+    print("wrote %d forged tags -> /app/tags.json" % len(out))
 
 
 if __name__ == "__main__":

@@ -1,64 +1,46 @@
-You are auditing an ECDSA signing service whose random number generator is
-suspected to be faulty. The service signs with the standard secp256k1 curve
-(the usual SEC 2 parameters; call the group order n and the base point G).
+You are auditing a legacy device-provisioning service. Every provisioning record
+it issues carries a 32-bit authentication tag, and the routine that computes that
+tag was lost when the original vendor folded — no specification for it survives.
+Your job is to demonstrate that the scheme is forgeable by producing valid tags
+for records the service never signed.
 
-The file `/app/data/signatures.json` holds the public evidence you collected. Its
-fields are:
+`/app/data/samples.json` is the recovered archive. It has `fields` (the record
+field names, in packing order), `tag_bits` (32), and `records`: 400 provisioning
+records, each with the four 32-bit hex fields `serial`, `batch`, `model`, `nonce`
+and the hex `tag` the service issued for it.
 
-- `curve`: always `"secp256k1"`.
-- `public_key`: the signer's long-term public key Q, given as hex `x` and `y`
-  affine coordinates. Q = d·G, where d is the private key you must recover.
-- `session_window_bits`: an object mapping each session id to that session's
-  window width exponent (see the nonce fact below). The widths are not all the
-  same.
-- `signatures`: a list of 44 records. Each record has hex integers `h`, `r`, `s`,
-  an integer `session`, and a boolean `s_low_normalized`. For every record the
-  signer used a per-signature secret nonce k, and the true values satisfy the
-  textbook ECDSA relation
+`/app/data/challenge.json` has the same shape but its 60 records carry no tag.
+These are the records you must forge tags for. None of them appears in the
+archive.
 
-      r = (k · G).x  mod n           s_true = k⁻¹ · (h + r · d)  mod n
+What is known about the tag routine:
 
-  where `h` is the message hash already reduced mod n (use it verbatim) and `r`
-  is as given. No extra hashing is applied.
+- It is deterministic and depends only on the four fields of the record it is
+  tagging. The same four field values always produce the same tag. No key
+  material, timestamp, counter, or record ordering enters into it.
+- It is not any published or standard checksum, MAC, or hash construction. It was
+  written in-house. You will not find it by name; recover it from the archive.
+- When the routine treats a record as a bit string it packs the four fields into
+  a single 128-bit value, `serial` occupying the lowest 32 bits, then `batch`,
+  then `model`, then `nonce` in the highest 32 bits.
+- The archive is imperfect: fewer than ten of the 400 rows have a corrupt tag,
+  each differing from the tag the routine would really produce. Which rows are
+  affected is not recorded. Every row of `challenge.json` is clean.
 
-Two recording details matter:
+Write the forged tags to `/app/tags.json` as a single JSON object with exactly
+this shape:
 
-- `s_low_normalized`: the archive that produced this file applied low-s
-  normalization to some records. When this flag is `true`, the stored `s` is
-  n − s_true rather than s_true itself; when it is `false`, the stored `s` is
-  s_true. Recover s_true before using the record.
-- `session`: the signing service restarted its RNG between sessions, and this
-  field records which session each signature belongs to.
+    {"tags": ["0x00000000", "0x00000000", ...]}
 
-The RNG fault is this: instead of ranging over the whole scalar field, the nonces
-of a session are confined to a narrow window whose position is fixed but unknown.
-Write W_g for `session_window_bits[g]`. For each session g there is an integer
-A_g, the same for every signature of that session, with 1 ≤ A_g and
-A_g + 2^(W_g) ≤ n, such that every nonce k of session g satisfies
-
-    A_g ≤ k < A_g + 2^(W_g)
-
-Two things vary from session to session and must be taken from the file, not
-assumed: the base A_g and the width W_g.
-
-The A_g are not given to you, and they are neither small nor round — treat each
-as an arbitrary value of the same magnitude as n. Different sessions have
-different, unrelated bases: knowing one tells you nothing about another. The
-widths W_g are given, and they differ between sessions. Nothing else about the
-nonces is known; within a window the offsets k − A_g vary freely.
-
-Recover the signer's private key d and write it to `/app/result.json` as a single
-JSON object with exactly this shape:
-
-    {"private_key": "<hex>"}
-
-where `<hex>` is d written in hexadecimal (a leading `0x` is optional). Write no
-other files.
+`tags` must be an array of exactly 60 hex strings, one per record of
+`challenge.json` and in the same order. Each must be a string (not a JSON
+number), must fit in 32 bits, and a leading `0x` is optional. Write no other
+files.
 
 Your submission is correct when all of the following hold:
 
-1. `/app/result.json` exists and is a JSON object whose `private_key` value is a
-   hex string decoding to an integer d with 1 ≤ d < n.
-2. The recovered d is the actual private key: d·G equals the public key Q given
-   in `signatures.json` (checked by independent scalar multiplication on the
-   curve).
+1. `/app/tags.json` exists and is a JSON object whose `tags` value is an array of
+   exactly 60 hexadecimal strings, each denoting a value below 2³².
+2. Every one of the 60 tags equals the tag the archive's own routine produces for
+   the corresponding challenge record. All 60 must be right; the correct tags are
+   held out and are not derivable from `challenge.json` alone.

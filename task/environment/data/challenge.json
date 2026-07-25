@@ -1,0 +1,371 @@
+{
+  "fields": [
+    "serial",
+    "batch",
+    "model",
+    "nonce"
+  ],
+  "tag_bits": 32,
+  "records": [
+    {
+      "serial": "0x1aa1fc48",
+      "batch": "0x64d52b6f",
+      "model": "0xf3121790",
+      "nonce": "0x8ac0f8f9"
+    },
+    {
+      "serial": "0x9c0dc098",
+      "batch": "0xa0e0bccb",
+      "model": "0xf94b2b87",
+      "nonce": "0xeae84c43"
+    },
+    {
+      "serial": "0x1007b528",
+      "batch": "0x643ab0ca",
+      "model": "0x563964be",
+      "nonce": "0xa4a608e8"
+    },
+    {
+      "serial": "0x95bc0a82",
+      "batch": "0x18241d22",
+      "model": "0xf24b0651",
+      "nonce": "0xa34a9cf6"
+    },
+    {
+      "serial": "0xf02ca833",
+      "batch": "0x21d6fc7d",
+      "model": "0x361004ec",
+      "nonce": "0xcfb34c1c"
+    },
+    {
+      "serial": "0xf8bf283a",
+      "batch": "0x6b5cb584",
+      "model": "0x450034c6",
+      "nonce": "0xc999c8b0"
+    },
+    {
+      "serial": "0x20f19fbb",
+      "batch": "0x68b02f8c",
+      "model": "0x9c38a181",
+      "nonce": "0x5c4bb2c5"
+    },
+    {
+      "serial": "0xfd8a8577",
+      "batch": "0x17d2ee41",
+      "model": "0xf25170e3",
+      "nonce": "0x7bf39327"
+    },
+    {
+      "serial": "0x8b3c487",
+      "batch": "0x6fe75f2c",
+      "model": "0xafcb846",
+      "nonce": "0x70686356"
+    },
+    {
+      "serial": "0x7ecedef7",
+      "batch": "0x47305c6b",
+      "model": "0xcd000778",
+      "nonce": "0x533a4fba"
+    },
+    {
+      "serial": "0x5a2bace2",
+      "batch": "0xa64bdd26",
+      "model": "0x43e86447",
+      "nonce": "0x7fd801b3"
+    },
+    {
+      "serial": "0x14794cfc",
+      "batch": "0x39929a45",
+      "model": "0x160c2455",
+      "nonce": "0xf8bdda3f"
+    },
+    {
+      "serial": "0x8c8b6846",
+      "batch": "0x892aceb9",
+      "model": "0x161a049c",
+      "nonce": "0xb7df0a92"
+    },
+    {
+      "serial": "0xe6442b33",
+      "batch": "0xd6e00eb6",
+      "model": "0xf4836052",
+      "nonce": "0x1963fb9e"
+    },
+    {
+      "serial": "0xc5f7c996",
+      "batch": "0x7354f5ef",
+      "model": "0xc687d363",
+      "nonce": "0xa5332e5f"
+    },
+    {
+      "serial": "0xd1aa5a8f",
+      "batch": "0xb8d7f1f0",
+      "model": "0x312db61f",
+      "nonce": "0xcfbec6ad"
+    },
+    {
+      "serial": "0x568ffd0e",
+      "batch": "0xb8106be0",
+      "model": "0xee0de6fa",
+      "nonce": "0x6447e06b"
+    },
+    {
+      "serial": "0x90dfdb66",
+      "batch": "0x4e4ee1ce",
+      "model": "0x32edce55",
+      "nonce": "0x83d4c39b"
+    },
+    {
+      "serial": "0xea92c7fa",
+      "batch": "0xfb4476f4",
+      "model": "0x94fe0614",
+      "nonce": "0x3c5be57b"
+    },
+    {
+      "serial": "0x45f3178",
+      "batch": "0x1f0f46f2",
+      "model": "0x53e2849d",
+      "nonce": "0xbadd6bff"
+    },
+    {
+      "serial": "0xbdacc024",
+      "batch": "0xab7427ba",
+      "model": "0xcf042b9d",
+      "nonce": "0x27609ae9"
+    },
+    {
+      "serial": "0x335cda4b",
+      "batch": "0xf2e48a46",
+      "model": "0x2dd27bcd",
+      "nonce": "0xaef4d00"
+    },
+    {
+      "serial": "0xb2ed4b6b",
+      "batch": "0x14f97caa",
+      "model": "0xb1b3562e",
+      "nonce": "0xf048a3bf"
+    },
+    {
+      "serial": "0x2cefeb93",
+      "batch": "0xd2c5633e",
+      "model": "0x3a7cc37d",
+      "nonce": "0x33bdcdb0"
+    },
+    {
+      "serial": "0x75a4186f",
+      "batch": "0x8d9210e9",
+      "model": "0xa159c10",
+      "nonce": "0x3990c5e1"
+    },
+    {
+      "serial": "0xaf9a0257",
+      "batch": "0x708ecbe1",
+      "model": "0x7b1f02c9",
+      "nonce": "0xdd7fbb21"
+    },
+    {
+      "serial": "0xbb7d1da8",
+      "batch": "0xf873c99a",
+      "model": "0xc49a628b",
+      "nonce": "0x9ea8fac3"
+    },
+    {
+      "serial": "0xc56bd4b6",
+      "batch": "0xe1913d0e",
+      "model": "0x87ce562f",
+      "nonce": "0xa8790a9e"
+    },
+    {
+      "serial": "0x67057fb8",
+      "batch": "0x7508dfeb",
+      "model": "0x1f4d7f08",
+      "nonce": "0x837ded16"
+    },
+    {
+      "serial": "0xf9010ab5",
+      "batch": "0x4fffbd7c",
+      "model": "0xe9aadacb",
+      "nonce": "0x2ee54a05"
+    },
+    {
+      "serial": "0xe8fb927b",
+      "batch": "0x8ae4b65f",
+      "model": "0x2e287f5b",
+      "nonce": "0xa4f6e78"
+    },
+    {
+      "serial": "0x9598f198",
+      "batch": "0xaeccea6",
+      "model": "0x42e79b63",
+      "nonce": "0x7f542a30"
+    },
+    {
+      "serial": "0x2baddf34",
+      "batch": "0x2b7ab582",
+      "model": "0x76db1a9e",
+      "nonce": "0x7ba5f717"
+    },
+    {
+      "serial": "0xaf08020e",
+      "batch": "0x9570a0a6",
+      "model": "0xc587cfbf",
+      "nonce": "0x573c4d4d"
+    },
+    {
+      "serial": "0xd93ee93a",
+      "batch": "0xb4326eaa",
+      "model": "0xd366354",
+      "nonce": "0x5aa905d5"
+    },
+    {
+      "serial": "0x921e361a",
+      "batch": "0xff2d9ff4",
+      "model": "0xda939c04",
+      "nonce": "0xe7e4eff7"
+    },
+    {
+      "serial": "0x7e6e74fd",
+      "batch": "0x26e6af52",
+      "model": "0xeffc39a1",
+      "nonce": "0x4fc3a044"
+    },
+    {
+      "serial": "0x65d23e33",
+      "batch": "0x9b8a8ae5",
+      "model": "0x15e7fdee",
+      "nonce": "0x2951a5aa"
+    },
+    {
+      "serial": "0x92ba2b0f",
+      "batch": "0xb4ea6d46",
+      "model": "0x7d4f7e7c",
+      "nonce": "0x19708f4"
+    },
+    {
+      "serial": "0xfd924b4d",
+      "batch": "0x8438be5f",
+      "model": "0x1aa68a3e",
+      "nonce": "0x4bc73787"
+    },
+    {
+      "serial": "0xa116bffe",
+      "batch": "0xa951f044",
+      "model": "0xe49d34e9",
+      "nonce": "0x137c7963"
+    },
+    {
+      "serial": "0x6d94a739",
+      "batch": "0x6aae8a72",
+      "model": "0xe15dce94",
+      "nonce": "0x822dacac"
+    },
+    {
+      "serial": "0x6fa49b52",
+      "batch": "0x6232366d",
+      "model": "0x8313e6b7",
+      "nonce": "0xdc2c475f"
+    },
+    {
+      "serial": "0x6a14dac9",
+      "batch": "0xe78b313a",
+      "model": "0x205c673c",
+      "nonce": "0xe34d943d"
+    },
+    {
+      "serial": "0x9b7e15b4",
+      "batch": "0xb94c7153",
+      "model": "0x89da3293",
+      "nonce": "0x4d116763"
+    },
+    {
+      "serial": "0x37ddab76",
+      "batch": "0x2ec04610",
+      "model": "0xa1b31f88",
+      "nonce": "0xe26c2754"
+    },
+    {
+      "serial": "0xd118dad5",
+      "batch": "0x93a97c76",
+      "model": "0x643a1eb6",
+      "nonce": "0x54852aaa"
+    },
+    {
+      "serial": "0x7470d90b",
+      "batch": "0xceedcc3c",
+      "model": "0x5406351a",
+      "nonce": "0xe1585e"
+    },
+    {
+      "serial": "0x473102aa",
+      "batch": "0x1e02d5c2",
+      "model": "0xffa716f",
+      "nonce": "0x5e4220b8"
+    },
+    {
+      "serial": "0x3c1aa5d0",
+      "batch": "0x20cdbc10",
+      "model": "0x9e8d607e",
+      "nonce": "0x5cff6844"
+    },
+    {
+      "serial": "0x7e909db6",
+      "batch": "0xf8800f11",
+      "model": "0x2eb7caf6",
+      "nonce": "0xafc3e722"
+    },
+    {
+      "serial": "0x84effef7",
+      "batch": "0x8835089f",
+      "model": "0x9cb6cf85",
+      "nonce": "0x8ce69efb"
+    },
+    {
+      "serial": "0x9b9e91c9",
+      "batch": "0xac01ef51",
+      "model": "0x8c746c8f",
+      "nonce": "0xd3c57125"
+    },
+    {
+      "serial": "0xbe3f1143",
+      "batch": "0x1d69cf59",
+      "model": "0x55ac7012",
+      "nonce": "0xcc99cb1d"
+    },
+    {
+      "serial": "0x89d2235a",
+      "batch": "0xa2d20346",
+      "model": "0x57aa10da",
+      "nonce": "0xd898c42a"
+    },
+    {
+      "serial": "0xe08049b",
+      "batch": "0x8a278fd6",
+      "model": "0xe3bfde7d",
+      "nonce": "0x2384e414"
+    },
+    {
+      "serial": "0x7d37e0af",
+      "batch": "0xe5fb8e1a",
+      "model": "0xfe45afa5",
+      "nonce": "0xad5c7e8f"
+    },
+    {
+      "serial": "0x969fc424",
+      "batch": "0x8a39d8db",
+      "model": "0x5b50ba5d",
+      "nonce": "0x4c5d2f0e"
+    },
+    {
+      "serial": "0xe6ca45b1",
+      "batch": "0xb09b5022",
+      "model": "0xc71e1224",
+      "nonce": "0x3c1f795e"
+    },
+    {
+      "serial": "0x8b81d525",
+      "batch": "0x45482cc9",
+      "model": "0xabce9036",
+      "nonce": "0x2bf0c825"
+    }
+  ]
+}

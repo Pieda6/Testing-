@@ -1,99 +1,92 @@
-# dynamo/ecdsa-nonce-lattice
+# dynamo/legacy-tag-forge
 
 **Category:** Security / Cryptanalysis
 
 ## Overview
 
-The agent audits an ECDSA (secp256k1) signing service with a faulty random number
-generator. It is given the public evidence in `/app/data/signatures.json` — the
-curve, the signer's public key `Q`, and 44 signature records — and must
-recover the signer's long-term private key `d`, writing it to `/app/result.json` as
-`{"private_key": "<hex>"}`.
-
-The RNG fault is a stuck window: every nonce of a session lies in
-`[A_g, A_g + 2^W_g)` for a base `A_g` of the same magnitude as the group order —
-unknown, and different for every session, as is the window width `W_g`. This is partial nonce leakage, the same
-class of break as the real-world Minerva, TPM-FAIL, and LadderLeak attacks, and it is
-the daily work of an applied cryptanalyst auditing a signer.
+A legacy device-provisioning service stamps every record with a 32-bit
+authentication tag. The routine that produces it was written in-house and lost
+when the vendor folded — no specification survives. The agent is given the
+recovered archive (`/app/data/samples.json`: 400 records with their tags) and 60
+unsigned records (`/app/data/challenge.json`), and must demonstrate the scheme is
+forgeable by writing correct tags for all 60 to `/app/tags.json`.
 
 ## Approach
 
-The corpus contains no repeated `r`, so the elementary "two signatures shared a
-nonce" break does not apply. Four independent mechanisms must all be handled before
-the lattice finds anything, and each fails *silently* — wrong key, no exception:
+There is no named attack to reach for — the construction is a one-off, so CRC,
+HMAC and hash guesses are dead ends (CRC-32 and truncated SHA-256 of the packed
+record both score 0/60 on the shipped data).
 
-1. **Unknown window base.** `A_g` has full ~256-bit entropy, so it cannot be guessed
-   or enumerated — it has to be cancelled algebraically by differencing signature
-   equations. (Had the fault been a stuck *B*-bit prefix, an agent could skip the
-   reduction entirely and try all 2^*B* candidates.)
-2. **Per-session bases.** Differencing is only valid *within* a session. The
-   templated single-global-pivot recipe mixes unrelated bases and yields rows that
-   are not small.
-3. **Low-s normalization.** Records flagged `s_low_normalized` store `n − s_true`,
-   so those equations describe `−k` rather than `+k` — a real-world BIP-62 footgun
-   that silently corrupts a third of the system.
-4. **Per-session window widths.** Every differenced row carries its own bound and
-   must be scaled individually. The widths (252, 250, 244, 240) are chosen so that
-   *no* uniform `K` works: assuming the widest starves the lattice (4×40 = 160 bits
-   against the 256 needed), while any narrower assumption is violated by the true
-   offsets of the wider sessions.
+The routine is in fact **affine over GF(2)**: each of the 32 tag bits is the XOR
+of a fixed secret subset of the record's 128 input bits, optionally complemented.
+That has to be noticed from the archive itself — parity relations hold across
+triples of records, which no arithmetic or rotation-based checksum would satisfy
+— and then rebuilt.
 
 The reference solution (`task/solution/solve.py`, called by `solve.sh`):
 
-1. Undo the normalization where flagged, then form `a_j = s_true⁻¹h_j` and
-   `t_j = s_true⁻¹r_j`, so `k_j ≡ a_j + t_j·d (mod n)`.
-2. Group by session and difference each session against its own pivot, cancelling
-   `A_g` and leaving `|k_j − k_p| < 2^W_g`.
-3. Stack all 40 differenced equations into one Boneh–Venkatesan lattice, scaling
-   each residue column by its **own** factor `n // K_i` so every coordinate of the
-   target vector is ~`n` regardless of which session the row came from.
-4. Run LLL, read `d` off the short vector, and confirm `d·G == Q`.
+1. Pack each record as a 128-bit integer (`serial` lowest, then `batch`, `model`,
+   `nonce`) and append a constant term, giving 129 unknowns.
+2. For each of the 32 output bits, solve the system over GF(2) by Gaussian
+   elimination.
+3. Evaluate the recovered form against all 400 rows and count disagreements. A
+   large residual means a corrupt row entered the pivot basis, so restart the
+   elimination from a different row offset and keep the solution with the
+   smallest residual.
+4. Evaluate the 32 recovered affine forms on each challenge record.
 
-It recovers the key in about 0.15 s with `fpylll`.
+It runs in about 0.6 s in pure Python.
 
-Grading is all-or-nothing on a single recovered key, so getting three of the four
-mechanisms right scores zero. Measured on the shipped data, the correct construction
-succeeds from any pivot choice, while session-blind differencing, ignoring the
-normalization, unscaled rows, and uniform `K` at 252 / 250 / 248 / 244 / 240 all
-fail. Correct per-row bounds give 4×10 + 6×10 + 12×10 + 16×10 = 380 bits of
-information against the 256 needed (margin ~1.48).
+## Why near-misses fail silently
+
+Two properties, both measured on the shipped data:
+
+- **Corrupt archive rows.** Fewer than ten of the 400 rows carry a corrupt tag
+  and their indices are not recorded. A plain elimination over all rows reaches
+  full rank and raises nothing — but absorbs corrupt rows into the basis and
+  poisons the affected output bits. That naive solve yields **1 of 60** correct
+  tags. Only measuring the residual and re-solving recovers the real map.
+- **No free self-check.** Grading is on held-out challenge records the agent has
+  no tags for, so agreeing with the archive proves nothing and there is nothing
+  to iterate against. A nearest-neighbour lookup over the samples scores **0/60**.
+
+Grading is all-or-nothing across all 60 tags; a 59-of-60 submission scores 0.
 
 ## Environment
 
-`task/environment/Dockerfile` builds the single image used by both the agent and the
-verifier, from the pre-approved digest-pinned `python:3.13-slim-bookworm`. It bakes in
-`fpylll` (lattice reduction), `ecdsa`, and `pytest` + `pytest-json-ctrf`, all pinned,
+`task/environment/Dockerfile` builds the single image used by both the agent and
+the verifier, from the pre-approved digest-pinned `python:3.13-slim-bookworm`. It
+bakes in `numpy`, `sympy`, `galois` and `pytest` + `pytest-json-ctrf`, all pinned,
 so the verifier installs nothing at verify time.
 
-Only the **public** corpus is copied into the image
-(`task/environment/data/signatures.json`). The private key, the session window bases,
-and the generator seed are never present — the dataset is synthetic and was generated
+Only the archive and the unsigned challenge records are copied into the image.
+The tag routine, the secret map, the generator seed, and the correct challenge
+tags are never present — the dataset is synthetic and was generated
 deterministically from a fixed seed outside the task tree.
 
 ## Verification
 
-`task/tests/test.sh` runs `task/tests/test_outputs.py` under pytest and writes `1`/`0`
-to `/logs/verifier/reward.txt`. Two tests map 1:1 to the two stated correctness
-conditions:
+`task/tests/test.sh` runs `task/tests/test_outputs.py` under pytest and writes
+`1`/`0` to `/logs/verifier/reward.txt`. Two tests map 1:1 to the two stated
+correctness conditions:
 
-1. **Schema** — `/app/result.json` is a JSON object whose `private_key` is a hex
-   *string* decoding to an integer `d` with `1 ≤ d < n` (JSON numbers, NaN, and
-   Infinity are rejected). The file is opened with `O_NOFOLLOW` so a symlinked output
-   path cannot alias another file.
-2. **Correctness** — the verifier independently recomputes `d·G` on secp256k1 and
-   asserts it equals the signer's public key `Q`.
+1. **Schema** — `/app/tags.json` is a JSON object whose `tags` is an array of
+   exactly 60 hex *strings*, each below 2³² (JSON numbers, NaN and Infinity are
+   rejected). The file is opened with `O_NOFOLLOW` so a symlinked output path
+   cannot alias another file.
+2. **Correctness** — all 60 tags are compared exactly against held-out ground
+   truth in `tests/expected_tags.json`, which is overlaid only at verification
+   time and never copied into the agent image.
 
-Ground truth is only the **public** key `Q`, embedded in the test file. No private key
-is stored anywhere in the image. Because finding `d` with `d·G == Q` is the discrete
-logarithm problem itself, a false accept is impossible and no tolerance is needed —
-grading is exact and deterministic.
+No challenge record shares an input vector with any sample, so the tags cannot be
+looked up — only a recovered rule generalises. There is no tolerance to calibrate,
+because the target is a bit-exact 32-bit value.
 
 ## Local calibration
 
-```bash
-harbor run -p task --agent oracle   # reward 1.0
-harbor run -p task --agent nop      # reward 0
-```
+    harbor run -p task --agent oracle   # reward 1.0
+    harbor run -p task --agent nop      # reward 0
 
-Adversarial cases also score 0: a wrong key, a numeric `private_key`, `NaN`, a
-decimal-encoded key, and a symlinked output path.
+Also scoring 0, all verified: CRC-32 guess, truncated SHA-256 guess,
+nearest-neighbour lookup, all-zero tags, a 59-of-60 near-miss, JSON-number tags,
+a wrong-length array, and a symlinked output path.

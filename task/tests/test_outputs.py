@@ -1,66 +1,22 @@
-"""Verifier for dynamo/ecdsa-nonce-lattice.
+"""Verifier for dynamo/legacy-tag-forge.
 
-Ground truth is the signer's PUBLIC key Q, embedded here as an immutable
-constant. Q is public information; recovering d with d*G == Q is exactly the
-task's discrete-log problem, so no correct-but-cheating answer can exist and no
-private key is stored anywhere in the agent's image. The check is independent
-of the agent-writable corpus at /app/data.
+Ground truth is the 60 correct challenge tags, held in tests/expected_tags.json.
+That file is overlaid only at verification time and is never copied into the
+agent's image, so the answers are not reachable from inside the task. The
+challenge records share no input vector with any sample, so the tags cannot be
+looked up -- they can only be produced by recovering the tag function.
 """
 import json
 import os
 
-# --- secp256k1 (self-contained; no dependency on agent-writable code) -------
-P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F
-N = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
-GX = 0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798
-GY = 0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8
-
-# Protected ground truth: the signer's public key Q (immutable input).
-QX = 0xCA4F86738C9200C6545B1659A1F22125724CB1C7E47F4312585A4E144931DC3A
-QY = 0x2CCC6753043927FDE8B8ADECA2DF06FE3D6038B572507B7670D5627F25A2D8DF
-
-RESULT_PATH = "/app/result.json"
-
-
-def _inv(x, m):
-    return pow(x % m, -1, m)
-
-
-def _padd(a, b):
-    if a is None:
-        return b
-    if b is None:
-        return a
-    x1, y1 = a
-    x2, y2 = b
-    if x1 == x2 and (y1 + y2) % P == 0:
-        return None
-    if a == b:
-        lam = (3 * x1 * x1) * _inv(2 * y1, P) % P
-    else:
-        lam = (y2 - y1) * _inv(x2 - x1, P) % P
-    x3 = (lam * lam - x1 - x2) % P
-    return (x3, (lam * (x1 - x3) - y1) % P)
-
-
-def _mul(k, pt):
-    k %= N
-    r = None
-    a = pt
-    while k:
-        if k & 1:
-            r = _padd(r, a)
-        a = _padd(a, a)
-        k >>= 1
-    return r
-
-
-G = (GX, GY)
-Q = (QX, QY)
+RESULT_PATH = "/app/tags.json"
+EXPECTED_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             "expected_tags.json")
+TAG_BITS = 32
 
 
 def _read_result():
-    """Read /app/result.json, refusing to follow a symlink at the final path
+    """Read /app/tags.json, refusing to follow a symlink at the final path
     component (O_NOFOLLOW anti-alias guard)."""
     fd = os.open(RESULT_PATH, os.O_RDONLY | os.O_NOFOLLOW)
     try:
@@ -71,38 +27,54 @@ def _read_result():
         raise
 
 
-def _parse_private_key(obj):
-    """Return d as int, or raise AssertionError if the shape is wrong.
-
-    The value must be a hex *string* (JSON numbers, floats, NaN, and Infinity
-    are all rejected)."""
-    assert isinstance(obj, dict), "result.json must be a JSON object"
-    assert "private_key" in obj, "result.json must contain key 'private_key'"
-    val = obj["private_key"]
-    assert isinstance(val, str), "'private_key' must be a hex string, not a number"
-    assert not isinstance(val, bool)
-    s = val.strip()
-    s = s[2:] if s.lower().startswith("0x") else s
-    assert s and all(c in "0123456789abcdefABCDEF" for c in s), \
-        "'private_key' must be a valid hexadecimal string"
-    d = int(s, 16)
-    # Defensive: reject non-finite sentinels should the field ever be numeric.
-    assert isinstance(d, int) and not isinstance(d, float)
-    return d
+def _expected():
+    with open(EXPECTED_PATH) as f:
+        return [int(t, 16) for t in json.load(f)["tags"]]
 
 
-def test_result_schema():
-    """Criterion 1: /app/result.json exists, is a JSON object, and its
-    'private_key' decodes to an integer d with 1 <= d < n."""
+def _parse_tags(obj, n_expected):
+    """Return the submitted tags as ints, or raise AssertionError on bad shape.
+
+    Each entry must be a hex *string*; JSON numbers, floats, NaN and Infinity
+    are all rejected."""
+    assert isinstance(obj, dict), "tags.json must be a JSON object"
+    assert "tags" in obj, "tags.json must contain key 'tags'"
+    tags = obj["tags"]
+    assert isinstance(tags, list), "'tags' must be a JSON array"
+    assert len(tags) == n_expected, (
+        "expected %d tags, got %d" % (n_expected, len(tags)))
+    out = []
+    for i, v in enumerate(tags):
+        assert isinstance(v, str), (
+            "tag %d must be a hex string, not a number" % i)
+        assert not isinstance(v, bool)
+        s = v.strip()
+        s = s[2:] if s.lower().startswith("0x") else s
+        assert s and all(c in "0123456789abcdefABCDEF" for c in s), (
+            "tag %d is not valid hexadecimal" % i)
+        t = int(s, 16)
+        assert isinstance(t, int) and not isinstance(t, float)
+        assert 0 <= t < (1 << TAG_BITS), (
+            "tag %d does not fit in %d bits" % (i, TAG_BITS))
+        out.append(t)
+    return out
+
+
+def test_output_schema():
+    """Criterion 1: /app/tags.json is a JSON object whose 'tags' is an array of
+    one 32-bit hex string per challenge record, in order."""
+    expected = _expected()
     obj = _read_result()
-    d = _parse_private_key(obj)
-    assert 1 <= d < N, "private key must satisfy 1 <= d < n"
+    _parse_tags(obj, len(expected))
 
 
-def test_recovered_key_matches_public_key():
-    """Criterion 2: the recovered d is the real private key, i.e. d*G == Q,
-    verified by independent scalar multiplication on secp256k1."""
-    obj = _read_result()
-    d = _parse_private_key(obj)
-    assert 1 <= d < N
-    assert _mul(d, G) == Q, "d*G does not equal the signer's public key Q"
+def test_all_tags_match():
+    """Criterion 2: every forged tag equals the tag the archive's own function
+    would produce for that challenge record -- checked against held-out ground
+    truth, so fitting the samples is not sufficient."""
+    expected = _expected()
+    got = _parse_tags(_read_result(), len(expected))
+    wrong = [i for i, (g, e) in enumerate(zip(got, expected)) if g != e]
+    assert not wrong, (
+        "%d of %d tags are wrong (first wrong index %d)"
+        % (len(wrong), len(expected), wrong[0]))
