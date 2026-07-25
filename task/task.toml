@@ -2,7 +2,7 @@ artifacts = ["/app/result.json"]
 
 [task]
 name = "dynamo/ecdsa-nonce-lattice"
-description = "Recover an ECDSA private key from signatures whose nonces share a secret high-bit prefix, via a Hidden Number Problem lattice attack."
+description = "Recover an ECDSA private key from signatures whose nonces are confined to a narrow window at an unknown position, via a Hidden Number Problem lattice attack."
 
 [metadata]
 # --- pre-seeded by the Dynamo team; DO NOT MODIFY ---
