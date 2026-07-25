@@ -11,16 +11,16 @@ recover the signer's long-term private key `d`, writing it to `/app/result.json`
 `{"private_key": "<hex>"}`.
 
 The RNG fault is a stuck window: every nonce of a session lies in
-`[A_g, A_g + 2²⁴⁸)` for a base `A_g` of the same magnitude as the group order —
-unknown, and different for every session. This is partial nonce leakage, the same
+`[A_g, A_g + 2^W_g)` for a base `A_g` of the same magnitude as the group order —
+unknown, and different for every session, as is the window width `W_g`. This is partial nonce leakage, the same
 class of break as the real-world Minerva, TPM-FAIL, and LadderLeak attacks, and it is
 the daily work of an applied cryptanalyst auditing a signer.
 
 ## Approach
 
 The corpus contains no repeated `r`, so the elementary "two signatures shared a
-nonce" break does not apply. Three independent mechanisms must all be handled before
-the lattice finds anything, and each fails *silently* rather than raising an error:
+nonce" break does not apply. Four independent mechanisms must all be handled before
+the lattice finds anything, and each fails *silently* — wrong key, no exception:
 
 1. **Unknown window base.** `A_g` has full ~256-bit entropy, so it cannot be guessed
    or enumerated — it has to be cancelled algebraically by differencing signature
@@ -32,28 +32,31 @@ the lattice finds anything, and each fails *silently* rather than raising an err
 3. **Low-s normalization.** Records flagged `s_low_normalized` store `n − s_true`,
    so those equations describe `−k` rather than `+k` — a real-world BIP-62 footgun
    that silently corrupts a third of the system.
+4. **Per-session window widths.** Every differenced row carries its own bound and
+   must be scaled individually. The widths (252, 250, 244, 240) are chosen so that
+   *no* uniform `K` works: assuming the widest starves the lattice (4×40 = 160 bits
+   against the 256 needed), while any narrower assumption is violated by the true
+   offsets of the wider sessions.
 
 The reference solution (`task/solution/solve.py`, called by `solve.sh`):
 
 1. Undo the normalization where flagged, then form `a_j = s_true⁻¹h_j` and
    `t_j = s_true⁻¹r_j`, so `k_j ≡ a_j + t_j·d (mod n)`.
 2. Group by session and difference each session against its own pivot, cancelling
-   `A_g` and leaving `|k_j − k_p| < 2²⁴⁸`.
-3. Stack all 40 differenced equations into one Boneh–Venkatesan lattice, scaling the
-   residue rows by `n // 2²⁴⁸` so the target vector is balanced.
+   `A_g` and leaving `|k_j − k_p| < 2^W_g`.
+3. Stack all 40 differenced equations into one Boneh–Venkatesan lattice, scaling
+   each residue column by its **own** factor `n // K_i` so every coordinate of the
+   target vector is ~`n` regardless of which session the row came from.
 4. Run LLL, read `d` off the short vector, and confirm `d·G == Q`.
 
-It recovers the key in about 0.3 s with `fpylll`.
+It recovers the key in about 0.15 s with `fpylll`.
 
-Grading is all-or-nothing on a single recovered key, so getting two of the three
+Grading is all-or-nothing on a single recovered key, so getting three of the four
 mechanisms right scores zero. Measured on the shipped data, the correct construction
-succeeds while session-blind differencing, ignoring the normalization, and an
-unscaled lattice each fail. The window is only 8 bits narrower than `n`, so each
-differenced pair yields ~8 bits: 44 records across 4 sessions give 40 equations
-(margin ~1.22), and the same construction fails at 36 even under BKZ-20 — while
-every valid variant tried (any pivot choice, rounded scale factors, a 2×-off
-constant column, BKZ) succeeds, so the margin punishes wrong methods rather than
-merely different ones.
+succeeds from any pivot choice, while session-blind differencing, ignoring the
+normalization, unscaled rows, and uniform `K` at 252 / 250 / 248 / 244 / 240 all
+fail. Correct per-row bounds give 4×10 + 6×10 + 12×10 + 16×10 = 380 bits of
+information against the 256 needed (margin ~1.48).
 
 ## Environment
 

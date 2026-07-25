@@ -1,14 +1,19 @@
 """Reference solver for dynamo/ecdsa-nonce-lattice.
 
-Three mechanisms must all be handled or the lattice silently misses the target:
+Four mechanisms must all be handled or the lattice silently misses the target:
 
-  1. Each nonce is k = A_g + e with 0 <= e < 2^W. A_g has full ~256-bit entropy,
-     so it cannot be guessed; it is cancelled algebraically by differencing.
+  1. Each nonce is k = A_g + e with 0 <= e < 2^(W_g). A_g has full ~256-bit
+     entropy, so it cannot be guessed; it is cancelled algebraically by
+     differencing.
   2. The base A_g is PER SESSION, so differencing is only valid between records
      of the same session. A single global pivot mixes unrelated bases and the
      resulting rows are not small.
   3. Records flagged s_low_normalized store n - s_true, which describes -k
      instead of +k; the normalisation is undone before use.
+  4. Each session has its OWN window WIDTH, so every differenced row carries its
+     own bound and must be scaled individually. No uniform K works: the widest
+     window starves the lattice of information, and any narrower choice is
+     violated by the true offsets of the wider sessions.
 
 The differenced system is a standard Hidden Number Problem, which a correctly
 scaled Boneh-Venkatesan lattice plus LLL then solves.
@@ -64,8 +69,8 @@ def mul(k, pt):
 G = (GX, GY)
 
 
-def equations(sigs):
-    """Return differenced (A, T) lists: A_j + T_j * d = (k_j - k_pivot) mod N."""
+def equations(sigs, widths):
+    """Return differenced (A, T, K) lists, where K_i bounds row i's offset."""
     a, t = {}, {}
     for j, sg in enumerate(sigs):
         s = int(sg["s"], 16)
@@ -79,34 +84,36 @@ def equations(sigs):
     for j, sg in enumerate(sigs):
         by_session[sg["session"]].append(j)
 
-    A, T = [], []
-    for _, idxs in sorted(by_session.items()):
+    A, T, K = [], [], []
+    for g, idxs in sorted(by_session.items()):
         pivot = idxs[0]                # mechanism 2: pivot within the session
+        bound = 1 << widths[str(g)]    # mechanism 4: this session's own width
         for j in idxs[1:]:
             A.append((a[j] - a[pivot]) % N)
             T.append((t[j] - t[pivot]) % N)
-    return A, T
+            K.append(bound)
+    return A, T, K
 
 
 def recover(pub):
     Q = (int(pub["public_key"]["x"], 16), int(pub["public_key"]["y"], 16))
-    K = 1 << pub["nonce_window_bits"]  # bound on |e_j - e_pivot|
-    A, T = equations(pub["signatures"])
+    A, T, K = equations(pub["signatures"], pub["session_window_bits"])
     m = len(A)
 
-    # Balanced Boneh-Venkatesan lattice: scale residue rows by F=N//K so the
-    # target vector's coordinates are all ~N.
-    F = N // K
+    # Balanced Boneh-Venkatesan lattice. Each residue column is scaled by its
+    # OWN factor F_i = N // K_i, so every coordinate of the target vector is
+    # ~N regardless of which session the row came from.
+    F = [N // k for k in K]
     dim = m + 2
     Bm = IntegerMatrix(dim, dim)
     for i in range(m):
-        Bm[i, i] = F * N
+        Bm[i, i] = F[i] * N
     for i in range(m):
-        Bm[m, i] = F * T[i]
+        Bm[m, i] = F[i] * T[i]
     Bm[m, m] = 1
     for i in range(m):
-        Bm[m + 1, i] = F * A[i]
-    Bm[m + 1, m + 1] = F * K
+        Bm[m + 1, i] = F[i] * A[i]
+    Bm[m + 1, m + 1] = N
     LLL.reduction(Bm)
 
     # The private key appears (up to sign) as the m-th coordinate of a short row.

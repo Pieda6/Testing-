@@ -8,7 +8,9 @@ fields are:
 - `curve`: always `"secp256k1"`.
 - `public_key`: the signer's long-term public key Q, given as hex `x` and `y`
   affine coordinates. Q = d·G, where d is the private key you must recover.
-- `nonce_window_bits`: the integer 248 (see the nonce fact below).
+- `session_window_bits`: an object mapping each session id to that session's
+  window width exponent (see the nonce fact below). The widths are not all the
+  same.
 - `signatures`: a list of 44 records. Each record has hex integers `h`, `r`, `s`,
   an integer `session`, and a boolean `s_low_normalized`. For every record the
   signer used a per-signature secret nonce k, and the true values satisfy the
@@ -30,16 +32,20 @@ Two recording details matter:
 
 The RNG fault is this: instead of ranging over the whole scalar field, the nonces
 of a session are confined to a narrow window whose position is fixed but unknown.
-For each session g there is an integer A_g, the same for every signature of that
-session, with 1 ≤ A_g and A_g + 2²⁴⁸ ≤ n, such that every nonce k of session g
-satisfies
+Write W_g for `session_window_bits[g]`. For each session g there is an integer
+A_g, the same for every signature of that session, with 1 ≤ A_g and
+A_g + 2^(W_g) ≤ n, such that every nonce k of session g satisfies
 
-    A_g ≤ k < A_g + 2²⁴⁸
+    A_g ≤ k < A_g + 2^(W_g)
+
+Two things vary from session to session and must be taken from the file, not
+assumed: the base A_g and the width W_g.
 
 The A_g are not given to you, and they are neither small nor round — treat each
 as an arbitrary value of the same magnitude as n. Different sessions have
-different, unrelated bases: knowing one tells you nothing about another. Nothing
-else about the nonces is known; within a window the offsets k − A_g vary freely.
+different, unrelated bases: knowing one tells you nothing about another. The
+widths W_g are given, and they differ between sessions. Nothing else about the
+nonces is known; within a window the offsets k − A_g vary freely.
 
 Recover the signer's private key d and write it to `/app/result.json` as a single
 JSON object with exactly this shape:

@@ -4,29 +4,30 @@ Fixed seed => byte-identical output on every run and every platform (all
 randomness derives from SHA-256 of a fixed seed + counter, so there is no
 dependence on the interpreter's RNG implementation).
 
-The corpus is a Hidden Number Problem instance with three independent
-mechanisms, each fully disclosed in the shipped data but each of which fails
-SILENTLY when the templated biased-nonce recipe is applied:
+The corpus is a Hidden Number Problem instance carrying four independent
+mechanisms. Each is fully disclosed in the shipped data, and each fails
+SILENTLY -- wrong key, no exception -- when the templated biased-nonce recipe
+is applied:
 
-  1. Unknown window base. Nonces are k = A + e with 0 <= e < 2^W, where A has
-     full ~256-bit entropy. A cannot be enumerated, so it must be cancelled
-     algebraically by differencing signature equations. (A stuck B-bit prefix
-     would instead let an agent skip the reduction and try all 2^B prefixes.)
+  1. Unknown window base. Nonces are k = A_g + e with 0 <= e < 2^(W_g), and A_g
+     has full ~256-bit entropy. A_g cannot be enumerated, so it must be
+     cancelled algebraically by differencing. (A stuck B-bit prefix would let an
+     agent skip the reduction and try all 2^B candidate prefixes instead.)
   2. Per-session bases. The RNG was reseeded between sessions, so each session
-     has its OWN unrelated base. Differencing must happen within a session; a
-     single global pivot yields rows that are not small, and the lattice fails.
-  3. Low-s normalisation. Some records were stored BIP-62 style with
-     s_recorded = n - s_true. Those equations describe -k rather than +k and
-     must be un-normalised first.
+     has its OWN unrelated base. Differencing is only valid within a session; a
+     single global pivot mixes unrelated bases and the rows are not small.
+  3. Low-s normalisation. Some records are stored BIP-62 style with
+     s_recorded = n - s_true. Those equations describe -k rather than +k.
+  4. Per-session window WIDTHS. Each session's window has its own width, so the
+     lattice needs a per-row bound. The widths are chosen so that NO uniform
+     choice of K can work: too narrow and the true offsets violate the bound,
+     too wide and the lattice is starved of information. With 10 equations per
+     session the correct per-row bounds yield 4*10 + 6*10 + 12*10 + 16*10 = 380
+     bits against the 256 needed (margin ~1.48), whereas assuming the widest
+     window uniformly yields only 4*40 = 160 bits and fails.
 
-Each mechanism is announced by an explicit field, so everything the verifier
+Every mechanism is announced by an explicit field, so everything the verifier
 grades is derivable from what the agent can see.
-
-Parameter notes:
-  W = 248 leaves 8 bits of leakage per differenced pair, so the lattice needs
-  more than 32 equations. M = 44 records across 4 sessions yields M - 4 = 40
-  (margin ~1.22), just above the cliff: the same construction fails at 36
-  equations even under BKZ-20.
 """
 import hashlib
 import json
@@ -35,10 +36,10 @@ import sys
 sys.path.insert(0, ".")
 from secp256k1 import N, G, scalar_mult, inv_mod, pubkey
 
-SEED = b"dynamo/ecdsa-nonce-lattice/v4"
-W = 248          # window width exponent: 0 <= e < 2^W
-SESSIONS = 4     # independent, unrelated window bases
-M = 44           # total signatures -> M - SESSIONS = 40 differenced equations
+SEED = b"dynamo/ecdsa-nonce-lattice/v5"
+WIDTHS = {0: 252, 1: 250, 2: 244, 3: 240}   # per-session window width exponents
+SESSIONS = 4
+M = 44                                       # -> M - SESSIONS = 40 equations
 
 
 def det_rand_int(counter, nbits):
@@ -48,19 +49,17 @@ def det_rand_int(counter, nbits):
     while len(out) * 8 < nbits:
         out += hashlib.sha256(SEED + counter.encode() + i.to_bytes(4, "big")).digest()
         i += 1
-    val = int.from_bytes(out, "big")
-    return val & ((1 << nbits) - 1)
+    return int.from_bytes(out, "big") & ((1 << nbits) - 1)
 
 
 def gen():
-    # Private key in [1, N-1]
     d = det_rand_int("privkey", 256) % (N - 1) + 1
     Q = pubkey(d)
 
-    # One unknown window base per session, each chosen so every nonce stays a
-    # valid scalar: 1 <= A and A + 2^W <= N.
-    bases = [det_rand_int(f"base{g}", 256) % (N - (1 << W) - 1) + 1
-             for g in range(SESSIONS)]
+    # One unknown base per session, each chosen so every nonce of that session
+    # stays a valid scalar: 1 <= A_g and A_g + 2^(W_g) <= N.
+    bases = {g: det_rand_int(f"base{g}", 256) % (N - (1 << WIDTHS[g]) - 1) + 1
+             for g in range(SESSIONS)}
 
     sigs = []
     used_r = set()
@@ -68,7 +67,7 @@ def gen():
     while len(sigs) < M:
         g = len(sigs) % SESSIONS          # round-robin session assignment
         h = det_rand_int(f"hash{idx}", 256) % N
-        e = det_rand_int(f"jit{idx}", W)
+        e = det_rand_int(f"jit{idx}", WIDTHS[g])
         k = bases[g] + e
         neg = (det_rand_int(f"neg{idx}", 8) % 3) == 0
         idx += 1
@@ -96,11 +95,11 @@ def gen():
     public = {
         "curve": "secp256k1",
         "public_key": {"x": hex(Q[0]), "y": hex(Q[1])},
-        "nonce_window_bits": W,
+        "session_window_bits": {str(g): WIDTHS[g] for g in range(SESSIONS)},
         "signatures": sigs,
     }
     secret = {"private_key": hex(d),
-              "session_bases": [hex(b) for b in bases]}
+              "session_bases": {str(g): hex(bases[g]) for g in range(SESSIONS)}}
     return public, secret
 
 
