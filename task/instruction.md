@@ -46,6 +46,3 @@ Your submission is correct when all of the following hold:
 2. Every one of the 60 tags equals the tag the archive's own routine produces for
    the corresponding challenge record. All 60 must be right; the correct tags are
    held out and are not derivable from `challenge.json` alone.
-
-You have 3600 seconds to complete this task. Do not cheat by using online
-solutions or hints specific to this task.
