@@ -7,7 +7,7 @@
 A legacy device-provisioning service stamps every record with a 32-bit
 authentication tag. The routine that produces it was written in-house and lost
 when the vendor folded — no specification survives. The agent is given the
-recovered archive (`/app/data/samples.json`: 200 records with their tags) and 60
+recovered archive (`/app/data/samples.json`: 240 records with their tags) and 60
 unsigned records (`/app/data/challenge.json`), and must demonstrate the scheme is
 forgeable by writing correct tags for all 60 to `/app/tags.json`.
 
@@ -27,25 +27,28 @@ The reference solution (`task/solution/solve.py`, called by `solve.sh`):
 
 1. Pack each record as a 128-bit integer (`serial` lowest, then `batch`, `model`,
    `nonce`) and append a constant term, giving 129 unknowns.
-2. For each of the 32 output bits, solve the system over GF(2) by Gaussian
-   elimination.
-3. Evaluate the recovered form against all 200 rows and count disagreements. A
-   large residual means a corrupt row entered the pivot basis, so restart the
-   elimination from a different row offset and keep the solution with the
-   smallest residual.
-4. Evaluate the 32 recovered affine forms on each challenge record.
+2. Sample 129 rows at random and solve all 32 output bits from that single
+   elimination, carrying the 32-bit tag along as the right-hand side.
+3. Score the candidate by full-tag agreement over all 240 rows. A corrupt row
+   has an unrelated tag, so it disagrees with certainty — a clean basis leaves a
+   residual equal to the number of corrupt rows, a poisoned one leaves ~half the
+   archive. Redraw until the residual falls inside the disclosed bound.
+4. Evaluate the recovered map on each challenge record.
 
-It runs in about 0.6 s in pure Python.
+It runs in about 85 s in pure Python with a seeded RNG, so it is deterministic.
 
 ## Why near-misses fail silently
 
 Two properties, both measured on the shipped data:
 
-- **Corrupt archive rows.** Fewer than ten of the 200 rows carry a corrupt tag
-  and their indices are not recorded. A plain elimination over all rows reaches
-  full rank and raises nothing — but absorbs corrupt rows into the basis and
-  poisons the affected output bits. That naive solve yields **1 of 60** correct
-  tags. Only measuring the residual and re-solving recovers the real map.
+- **Corrupt archive rows, with no cheap dodge.** 12 of the 240 rows have their
+  tag *replaced outright*, indices unrecorded. Because the corruption is
+  row-wise, every output bit sees the same ~5% bad rows, so no fixed choice of
+  pivot rows avoids them: the best contiguous 129-row window leaves a residual
+  of 111 where a clean basis leaves exactly 12. A plain elimination still
+  reaches full rank and raises nothing. A naive first-129 basis, the best
+  fixed-offset basis, and an all-rows elimination each score **0 of 60**. Only a
+  randomised search for a clean basis recovers the real map.
 - **No free self-check.** Grading is on held-out challenge records the agent has
   no tags for, so agreeing with the archive proves nothing and there is nothing
   to iterate against. A nearest-neighbour lookup over the samples scores **0/60**.
@@ -89,4 +92,5 @@ because the target is a bit-exact 32-bit value.
 
 Also scoring 0, all verified: CRC-32 guess, truncated SHA-256 guess,
 nearest-neighbour lookup, all-zero tags, a 59-of-60 near-miss, JSON-number tags,
-a wrong-length array, and a symlinked output path.
+a wrong-length array, a symlinked output path, a naive first-129 basis, the best
+fixed-offset basis, and an all-rows elimination.

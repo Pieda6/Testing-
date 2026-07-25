@@ -5,7 +5,7 @@ Your job is to demonstrate that the scheme is forgeable by producing valid tags
 for records the service never signed.
 
 `/app/data/samples.json` is the recovered archive. It has `fields` (the record
-field names, in packing order), `tag_bits` (32), and `records`: 200 provisioning
+field names, in packing order), `tag_bits` (32), and `records`: 240 provisioning
 records, each with the four 32-bit hex fields `serial`, `batch`, `model`, `nonce`
 and the hex `tag` the service issued for it.
 
@@ -23,9 +23,11 @@ What is known about the tag routine:
 - When the routine treats a record as a bit string it packs the four fields into
   a single 128-bit value, `serial` occupying the lowest 32 bits, then `batch`,
   then `model`, then `nonce` in the highest 32 bits.
-- The archive is imperfect: fewer than ten of the 200 rows have a corrupt tag,
-  each differing from the tag the routine would really produce. Which rows are
-  affected is not recorded. Every row of `challenge.json` is clean.
+- The archive is imperfect: fewer than twenty of the 240 rows carry a corrupt
+  tag. On an affected row the recorded tag is unrelated to the one the routine
+  would produce — the whole 32-bit value is wrong, not a single flipped bit.
+  Which rows are affected is not recorded. Every row of `challenge.json` is
+  clean.
 
 Write the forged tags to `/app/tags.json` as a single JSON object with exactly
 this shape:

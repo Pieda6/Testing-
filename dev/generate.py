@@ -16,12 +16,15 @@ Why this shape:
     over GF(2), spanning the input space, and coping with corrupt rows.
   * No free self-check. Grading is on held-out challenge records, so fitting the
     visible samples proves nothing and a lookup table scores zero.
-  * Silent failure. A small number of archived rows carry corrupt tags. A plain
-    elimination over all rows can absorb one into the basis and yield a wrong
-    map for that bit with no error raised.
+  * Silent failure with no cheap dodge. 12 of the 240 rows have their whole tag
+    replaced. Because corruption is row-wise, every output bit sees the same 5%
+    bad rows, so no fixed choice of pivot rows avoids them: the solver must
+    search for a clean 129-row basis (RANSAC-style, ~4k tries) and score
+    candidates by FULL-tag agreement, where a corrupt row disagrees with
+    certainty. A plain elimination reaches full rank and raises nothing.
 
 Emits:
-  samples.json   - 200 records with tags (agent-visible)
+  samples.json   - 240 records with tags (agent-visible)
   challenge.json - 60 records without tags (agent-visible)
   expected_tags.json - the 60 correct tags (VERIFIER ONLY, goes in tests/)
 """
@@ -31,9 +34,9 @@ import json
 SEED = b"dynamo/legacy-tag/v1"
 NBITS_IN = 128           # four 32-bit fields
 NBITS_OUT = 32
-N_SAMPLES = 200
+N_SAMPLES = 240
 N_CHALLENGE = 60
-N_CORRUPT = 6
+N_CORRUPT = 12
 FIELDS = ("serial", "batch", "model", "nonce")
 
 
@@ -84,11 +87,14 @@ def build():
         r["tag"] = tag_of(r)
         samples.append(r)
 
-    # Corrupt a few archived tags by flipping one bit. Indices are NOT disclosed;
-    # the instruction states only that fewer than ten rows are affected.
-    idx = sorted({det_int(f"corr{j}", 16) % N_SAMPLES for j in range(N_CORRUPT * 3)})[:N_CORRUPT]
+    # Corrupt a few archived rows by REPLACING the whole tag, not flipping one
+    # bit. Row-wise corruption means every output bit sees the same ~5% bad
+    # rows, so no fixed choice of pivot rows dodges them -- the solver has to
+    # search for a clean basis. Indices are NOT disclosed; the instruction says
+    # only that fewer than twenty rows are affected.
+    idx = sorted({det_int(f"corr{j}", 16) % N_SAMPLES for j in range(N_CORRUPT * 4)})[:N_CORRUPT]
     for ci in idx:
-        samples[ci]["tag"] ^= (1 << (det_int(f"cb{ci}", 8) % NBITS_OUT))
+        samples[ci]["tag"] = det_int(f"badtag{ci}", NBITS_OUT)
 
     challenge = [make_rec(10_000 + i) for i in range(N_CHALLENGE)]
     answers = [tag_of(r) for r in challenge]
