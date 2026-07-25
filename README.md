@@ -7,7 +7,7 @@
 A legacy device-provisioning service stamps every record with a 32-bit
 authentication tag. The routine that produces it was written in-house and lost
 when the vendor folded — no specification survives. The agent is given the
-recovered archive (`/app/data/samples.json`: 400 records with their tags) and 60
+recovered archive (`/app/data/samples.json`: 200 records with their tags) and 60
 unsigned records (`/app/data/challenge.json`), and must demonstrate the scheme is
 forgeable by writing correct tags for all 60 to `/app/tags.json`.
 
@@ -29,7 +29,7 @@ The reference solution (`task/solution/solve.py`, called by `solve.sh`):
    `nonce`) and append a constant term, giving 129 unknowns.
 2. For each of the 32 output bits, solve the system over GF(2) by Gaussian
    elimination.
-3. Evaluate the recovered form against all 400 rows and count disagreements. A
+3. Evaluate the recovered form against all 200 rows and count disagreements. A
    large residual means a corrupt row entered the pivot basis, so restart the
    elimination from a different row offset and keep the solution with the
    smallest residual.
@@ -41,7 +41,7 @@ It runs in about 0.6 s in pure Python.
 
 Two properties, both measured on the shipped data:
 
-- **Corrupt archive rows.** Fewer than ten of the 400 rows carry a corrupt tag
+- **Corrupt archive rows.** Fewer than ten of the 200 rows carry a corrupt tag
   and their indices are not recorded. A plain elimination over all rows reaches
   full rank and raises nothing — but absorbs corrupt rows into the basis and
   poisons the affected output bits. That naive solve yields **1 of 60** correct

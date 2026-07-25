@@ -21,7 +21,7 @@ Why this shape:
     map for that bit with no error raised.
 
 Emits:
-  samples.json   - 400 records with tags (agent-visible)
+  samples.json   - 200 records with tags (agent-visible)
   challenge.json - 60 records without tags (agent-visible)
   expected_tags.json - the 60 correct tags (VERIFIER ONLY, goes in tests/)
 """
@@ -31,7 +31,7 @@ import json
 SEED = b"dynamo/legacy-tag/v1"
 NBITS_IN = 128           # four 32-bit fields
 NBITS_OUT = 32
-N_SAMPLES = 400
+N_SAMPLES = 200
 N_CHALLENGE = 60
 N_CORRUPT = 6
 FIELDS = ("serial", "batch", "model", "nonce")
@@ -108,8 +108,10 @@ def hexrec(r, with_tag):
 if __name__ == "__main__":
     samples, challenge, answers, corrupt = build()
     with open("samples.json", "w") as f:
-        json.dump({"fields": list(FIELDS), "tag_bits": NBITS_OUT,
-                   "records": [hexrec(r, True) for r in samples]}, f, indent=2)
+        f.write('{\n"fields":["serial","batch","model","nonce"],\n"tag_bits":32,\n"records":[\n')
+        lines = [json.dumps(hexrec(r, True), separators=(",", ":")) for r in samples]
+        f.write(",\n".join(lines))
+        f.write("\n]\n}\n")
     with open("challenge.json", "w") as f:
         json.dump({"fields": list(FIELDS), "tag_bits": NBITS_OUT,
                    "records": [hexrec(r, False) for r in challenge]}, f, indent=2)

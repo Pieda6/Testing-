@@ -62,7 +62,7 @@ def solve_bit(rows_all):
     """Recover one output bit's affine form; returns (coef_vector, residual)."""
     best = None
     # Deterministic restarts, so a corrupt row landing in the basis is escaped.
-    for off in (0, 137, 251, 313, 41, 199):
+    for off in (0, 61, 113, 157, 29, 181):
         rot = rows_all[off:] + rows_all[:off]
         piv = rref(rot)
         if len(piv) != NU:
