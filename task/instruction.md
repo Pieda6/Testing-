@@ -20,6 +20,9 @@ What is known about the tag routine:
   material, timestamp, counter, or record ordering enters into it.
 - It is not any published or standard checksum, MAC, or hash construction. It was
   written in-house. You will not find it by name; recover it from the archive.
+- It is bitwise-linear. Each of the 32 tag bits is the exclusive-or of a fixed
+  subset of the record's 128 input bits, possibly inverted. Which subsets, and
+  which bits are inverted, is exactly what the archive has to tell you.
 - When the routine treats a record as a bit string it packs the four fields into
   a single 128-bit value, `serial` occupying the lowest 32 bits, then `batch`,
   then `model`, then `nonce` in the highest 32 bits.
@@ -38,6 +41,10 @@ this shape:
 `challenge.json` and in the same order. Each must be a string (not a JSON
 number), must fit in 32 bits, and a leading `0x` is optional. Write no other
 files.
+
+Write `/app/tags.json` as soon as you have any candidate answer, and overwrite it
+whenever you improve on it. A missing or partial file scores zero, so do not hold
+the file back while you refine your reconstruction.
 
 Your submission is correct when all of the following hold:
 
