@@ -1,10 +1,12 @@
 """Reference solver for dynamo/ecdsa-nonce-lattice.
 
-Recovers the ECDSA private key from the shared-high-bits nonce corpus by
-reducing to a Hidden Number Problem and running LLL. The decisive step is
-eliminating the *unknown but shared* top bits of the nonces by differencing
-signature equations, which turns the corpus into a standard HNP instance.
-No seed, generator, or answer key is consulted — only the public corpus at
+Every nonce is k_i = A + e_i for one unknown base A and 0 <= e_i < 2^W. The
+decisive step is eliminating A -- which has full ~256-bit entropy and so cannot
+be guessed -- by differencing the signature equations against a pivot. That
+turns the corpus into a standard Hidden Number Problem, which a correctly scaled
+Boneh-Venkatesan lattice plus LLL then solves.
+
+No seed, generator, or answer key is consulted -- only the public corpus at
 /app/data/signatures.json.
 """
 import json
@@ -56,10 +58,7 @@ G = (GX, GY)
 
 def recover(pub):
     Q = (int(pub["public_key"]["x"], 16), int(pub["public_key"]["y"], 16))
-    L = pub["nonce_bit_length"]
-    B = pub["nonce_leak_high_bits"]
-    low = L - B
-    K = 1 << low  # bound on |e_i - e_0|
+    K = 1 << pub["nonce_window_bits"]  # bound on |e_i - e_0|
     sigs = pub["signatures"]
 
     # k_i = a_i + t_i * d (mod N)
@@ -72,7 +71,7 @@ def recover(pub):
         a.append(si * h % N)
         t.append(si * r % N)
 
-    # Difference against index 0 to cancel the shared unknown high part:
+    # Difference against index 0 to cancel the unknown window base A:
     #   (k_i - k_0) = (a_i - a_0) + (t_i - t_0) d (mod N),   |k_i - k_0| < K
     A = [(a[i] - a[0]) % N for i in range(1, len(sigs))]
     T = [(t[i] - t[0]) % N for i in range(1, len(sigs))]

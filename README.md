@@ -6,12 +6,13 @@
 
 The agent audits an ECDSA (secp256k1) signing service with a faulty random number
 generator. It is given the public evidence in `/app/data/signatures.json` — the
-curve, the signer's public key `Q`, and 16 signature triples `(h, r, s)` — and must
+curve, the signer's public key `Q`, and 40 signature triples `(h, r, s)` — and must
 recover the signer's long-term private key `d`, writing it to `/app/result.json` as
 `{"private_key": "<hex>"}`.
 
-The RNG fault is a stuck high prefix: every ephemeral nonce is a 255-bit integer whose
-**top 24 bits are the same unknown constant**. This is partial nonce leakage, the same
+The RNG fault is a stuck window: every ephemeral nonce lies in `[A, A + 2²⁴⁸)` for a
+**single unknown base `A`** of the same magnitude as the group order. This is partial
+nonce leakage, the same
 class of break as the real-world Minerva, TPM-FAIL, and LadderLeak attacks, and it is
 the daily work of an applied cryptanalyst auditing a signer.
 
@@ -23,25 +24,29 @@ lattice attack:
 
 1. Rewrite each signature as `k_i ≡ a_i + t_i·d (mod n)` with `a_i = s_i⁻¹h_i` and
    `t_i = s_i⁻¹r_i`.
-2. Because every nonce shares the same unknown top bits, **difference the equations
-   against a pivot signature** to cancel that shared prefix, leaving
-   `(k_i − k_0) ≡ (a_i − a_0) + (t_i − t_0)d (mod n)` with `|k_i − k_0| < 2²³¹`.
+2. Because every nonce is `A + e_i` for one unknown `A`, **difference the equations
+   against a pivot signature** to cancel `A`, leaving
+   `(k_i − k_0) ≡ (a_i − a_0) + (t_i − t_0)d (mod n)` with `|k_i − k_0| < 2²⁴⁸`.
 3. Build a Boneh–Venkatesan lattice from the differenced pairs, scaling the residue
-   rows by `n // 2²³¹` so the target vector is balanced.
+   rows by `n // 2²⁴⁸` so the target vector is balanced.
 4. Run LLL, read `d` off the short vector, and confirm with `d·G == Q`.
 
 The decisive step is (2). Every widely documented biased-nonce lattice attack assumes
 the leaked high bits are *zero* ("short nonces"); here they are a nonzero **unknown**
-constant, so the textbook lattice has no short vector at the true solution and returns
-a wrong key. The reference solution (`task/solution/solve.py`, called by `solve.sh`)
-recovers the key in a tenth of a second with `fpylll`.
+window base, so the textbook lattice has no short vector at the true solution and
+returns a wrong key. The reference solution (`task/solution/solve.py`, called by
+`solve.sh`) recovers the key in about 0.2 s with `fpylll`.
 
-Two shortcuts are deliberately closed. The prefix is 24 bits wide, so enumerating its
-2²⁴ (~16.8M) possible values and solving a standard zero-MSB HNP for each is
-computationally infeasible — a measured sweep would take on the order of a thousand
-hours against a 1800-second budget. And only 16 signatures are supplied, about 1.4×
-the information the lattice minimally needs, so a wrongly scaled or wrongly oriented
-lattice fails rather than being rescued by surplus data.
+Two shortcuts are closed by construction. `A` carries full ~256-bit entropy, so it
+cannot be guessed or enumerated — the reason the fault is modelled as an unknown
+window base rather than a stuck *B*-bit prefix, where an agent could sidestep the
+reduction entirely by trying all 2^*B* candidate prefixes. And the window is only 8
+bits narrower than `n`, so each differenced pair yields ~8 bits: the lattice needs
+more than 32 equations, and 40 signatures are supplied (margin ~1.22). Measured on
+the shipped data, the same construction fails at 36 signatures even under BKZ-20 and
+an unscaled lattice fails at every count tested, while every valid variant tried (any
+pivot, rounded scale factors, a 2×-off constant column, BKZ) succeeds — the margin
+punishes wrong methods, not merely different ones.
 
 ## Environment
 

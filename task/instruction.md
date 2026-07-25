@@ -8,9 +8,8 @@ fields are:
 - `curve`: always `"secp256k1"`.
 - `public_key`: the signer's long-term public key Q, given as hex `x` and `y`
   affine coordinates. Q = d·G, where d is the private key you must recover.
-- `nonce_bit_length`: the integer 255 (see the nonce fact below).
-- `nonce_leak_high_bits`: the integer 24 (see the nonce fact below).
-- `signatures`: a list of 16 signatures. Each entry has hex integers
+- `nonce_window_bits`: the integer 248 (see the nonce fact below).
+- `signatures`: a list of 40 signatures. Each entry has hex integers
   `h`, `r`, `s`. For every entry, the signer used a per-signature secret nonce k
   and the values satisfy the textbook ECDSA relation
 
@@ -19,10 +18,16 @@ fields are:
   where `h` is the message hash already reduced mod n (use it verbatim), and
   `r`, `s` are as given. No low-s normalization or extra hashing is applied.
 
-The RNG fault is this: every nonce k is a 255-bit integer (0 ≤ k < 2²⁵⁵), and the
-top 24 bits of all of them are stuck to the same unknown constant. Equivalently,
-⌊k / 2²³¹⌋ is one and the same (unknown) value for every signature in the file.
-Nothing else about the nonces is known — the low 231 bits vary freely.
+The RNG fault is this: instead of ranging over the whole scalar field, the nonces
+are confined to a narrow window whose position is fixed but unknown. Concretely,
+there is a single integer A, the same for every signature in the file, with
+1 ≤ A and A + 2²⁴⁸ ≤ n, such that every nonce satisfies
+
+    A ≤ k < A + 2²⁴⁸
+
+You are not told A, and it is not a small number or a round one — treat it as an
+arbitrary value of the same magnitude as n. Nothing else about the nonces is
+known: the offsets k − A vary freely across the window.
 
 Recover the signer's private key d and write it to `/app/result.json` as a single
 JSON object with exactly this shape:
