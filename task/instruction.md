@@ -9,25 +9,37 @@ fields are:
 - `public_key`: the signer's long-term public key Q, given as hex `x` and `y`
   affine coordinates. Q = d·G, where d is the private key you must recover.
 - `nonce_window_bits`: the integer 248 (see the nonce fact below).
-- `signatures`: a list of 40 signatures. Each entry has hex integers
-  `h`, `r`, `s`. For every entry, the signer used a per-signature secret nonce k
-  and the values satisfy the textbook ECDSA relation
+- `signatures`: a list of 44 records. Each record has hex integers `h`, `r`, `s`,
+  an integer `session`, and a boolean `s_low_normalized`. For every record the
+  signer used a per-signature secret nonce k, and the true values satisfy the
+  textbook ECDSA relation
 
-      r = (k · G).x  mod n           s = k⁻¹ · (h + r · d)  mod n
+      r = (k · G).x  mod n           s_true = k⁻¹ · (h + r · d)  mod n
 
-  where `h` is the message hash already reduced mod n (use it verbatim), and
-  `r`, `s` are as given. No low-s normalization or extra hashing is applied.
+  where `h` is the message hash already reduced mod n (use it verbatim) and `r`
+  is as given. No extra hashing is applied.
+
+Two recording details matter:
+
+- `s_low_normalized`: the archive that produced this file applied low-s
+  normalization to some records. When this flag is `true`, the stored `s` is
+  n − s_true rather than s_true itself; when it is `false`, the stored `s` is
+  s_true. Recover s_true before using the record.
+- `session`: the signing service restarted its RNG between sessions, and this
+  field records which session each signature belongs to.
 
 The RNG fault is this: instead of ranging over the whole scalar field, the nonces
-are confined to a narrow window whose position is fixed but unknown. Concretely,
-there is a single integer A, the same for every signature in the file, with
-1 ≤ A and A + 2²⁴⁸ ≤ n, such that every nonce satisfies
+of a session are confined to a narrow window whose position is fixed but unknown.
+For each session g there is an integer A_g, the same for every signature of that
+session, with 1 ≤ A_g and A_g + 2²⁴⁸ ≤ n, such that every nonce k of session g
+satisfies
 
-    A ≤ k < A + 2²⁴⁸
+    A_g ≤ k < A_g + 2²⁴⁸
 
-You are not told A, and it is not a small number or a round one — treat it as an
-arbitrary value of the same magnitude as n. Nothing else about the nonces is
-known: the offsets k − A vary freely across the window.
+The A_g are not given to you, and they are neither small nor round — treat each
+as an arbitrary value of the same magnitude as n. Different sessions have
+different, unrelated bases: knowing one tells you nothing about another. Nothing
+else about the nonces is known; within a window the offsets k − A_g vary freely.
 
 Recover the signer's private key d and write it to `/app/result.json` as a single
 JSON object with exactly this shape:

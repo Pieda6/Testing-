@@ -6,47 +6,54 @@
 
 The agent audits an ECDSA (secp256k1) signing service with a faulty random number
 generator. It is given the public evidence in `/app/data/signatures.json` — the
-curve, the signer's public key `Q`, and 40 signature triples `(h, r, s)` — and must
+curve, the signer's public key `Q`, and 44 signature records — and must
 recover the signer's long-term private key `d`, writing it to `/app/result.json` as
 `{"private_key": "<hex>"}`.
 
-The RNG fault is a stuck window: every ephemeral nonce lies in `[A, A + 2²⁴⁸)` for a
-**single unknown base `A`** of the same magnitude as the group order. This is partial
-nonce leakage, the same
+The RNG fault is a stuck window: every nonce of a session lies in
+`[A_g, A_g + 2²⁴⁸)` for a base `A_g` of the same magnitude as the group order —
+unknown, and different for every session. This is partial nonce leakage, the same
 class of break as the real-world Minerva, TPM-FAIL, and LadderLeak attacks, and it is
 the daily work of an applied cryptanalyst auditing a signer.
 
 ## Approach
 
 The corpus contains no repeated `r`, so the elementary "two signatures shared a
-nonce" break does not apply. The intended solution is a Hidden Number Problem (HNP)
-lattice attack:
+nonce" break does not apply. Three independent mechanisms must all be handled before
+the lattice finds anything, and each fails *silently* rather than raising an error:
 
-1. Rewrite each signature as `k_i ≡ a_i + t_i·d (mod n)` with `a_i = s_i⁻¹h_i` and
-   `t_i = s_i⁻¹r_i`.
-2. Because every nonce is `A + e_i` for one unknown `A`, **difference the equations
-   against a pivot signature** to cancel `A`, leaving
-   `(k_i − k_0) ≡ (a_i − a_0) + (t_i − t_0)d (mod n)` with `|k_i − k_0| < 2²⁴⁸`.
-3. Build a Boneh–Venkatesan lattice from the differenced pairs, scaling the residue
-   rows by `n // 2²⁴⁸` so the target vector is balanced.
-4. Run LLL, read `d` off the short vector, and confirm with `d·G == Q`.
+1. **Unknown window base.** `A_g` has full ~256-bit entropy, so it cannot be guessed
+   or enumerated — it has to be cancelled algebraically by differencing signature
+   equations. (Had the fault been a stuck *B*-bit prefix, an agent could skip the
+   reduction entirely and try all 2^*B* candidates.)
+2. **Per-session bases.** Differencing is only valid *within* a session. The
+   templated single-global-pivot recipe mixes unrelated bases and yields rows that
+   are not small.
+3. **Low-s normalization.** Records flagged `s_low_normalized` store `n − s_true`,
+   so those equations describe `−k` rather than `+k` — a real-world BIP-62 footgun
+   that silently corrupts a third of the system.
 
-The decisive step is (2). Every widely documented biased-nonce lattice attack assumes
-the leaked high bits are *zero* ("short nonces"); here they are a nonzero **unknown**
-window base, so the textbook lattice has no short vector at the true solution and
-returns a wrong key. The reference solution (`task/solution/solve.py`, called by
-`solve.sh`) recovers the key in about 0.2 s with `fpylll`.
+The reference solution (`task/solution/solve.py`, called by `solve.sh`):
 
-Two shortcuts are closed by construction. `A` carries full ~256-bit entropy, so it
-cannot be guessed or enumerated — the reason the fault is modelled as an unknown
-window base rather than a stuck *B*-bit prefix, where an agent could sidestep the
-reduction entirely by trying all 2^*B* candidate prefixes. And the window is only 8
-bits narrower than `n`, so each differenced pair yields ~8 bits: the lattice needs
-more than 32 equations, and 40 signatures are supplied (margin ~1.22). Measured on
-the shipped data, the same construction fails at 36 signatures even under BKZ-20 and
-an unscaled lattice fails at every count tested, while every valid variant tried (any
-pivot, rounded scale factors, a 2×-off constant column, BKZ) succeeds — the margin
-punishes wrong methods, not merely different ones.
+1. Undo the normalization where flagged, then form `a_j = s_true⁻¹h_j` and
+   `t_j = s_true⁻¹r_j`, so `k_j ≡ a_j + t_j·d (mod n)`.
+2. Group by session and difference each session against its own pivot, cancelling
+   `A_g` and leaving `|k_j − k_p| < 2²⁴⁸`.
+3. Stack all 40 differenced equations into one Boneh–Venkatesan lattice, scaling the
+   residue rows by `n // 2²⁴⁸` so the target vector is balanced.
+4. Run LLL, read `d` off the short vector, and confirm `d·G == Q`.
+
+It recovers the key in about 0.3 s with `fpylll`.
+
+Grading is all-or-nothing on a single recovered key, so getting two of the three
+mechanisms right scores zero. Measured on the shipped data, the correct construction
+succeeds while session-blind differencing, ignoring the normalization, and an
+unscaled lattice each fail. The window is only 8 bits narrower than `n`, so each
+differenced pair yields ~8 bits: 44 records across 4 sessions give 40 equations
+(margin ~1.22), and the same construction fails at 36 even under BKZ-20 — while
+every valid variant tried (any pivot choice, rounded scale factors, a 2×-off
+constant column, BKZ) succeeds, so the margin punishes wrong methods rather than
+merely different ones.
 
 ## Environment
 
@@ -56,8 +63,8 @@ verifier, from the pre-approved digest-pinned `python:3.13-slim-bookworm`. It ba
 so the verifier installs nothing at verify time.
 
 Only the **public** corpus is copied into the image
-(`task/environment/data/signatures.json`). The private key, the nonce prefix, and the
-generator seed are never present — the dataset is synthetic and was generated
+(`task/environment/data/signatures.json`). The private key, the session window bases,
+and the generator seed are never present — the dataset is synthetic and was generated
 deterministically from a fixed seed outside the task tree.
 
 ## Verification

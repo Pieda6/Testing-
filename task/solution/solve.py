@@ -1,15 +1,23 @@
 """Reference solver for dynamo/ecdsa-nonce-lattice.
 
-Every nonce is k_i = A + e_i for one unknown base A and 0 <= e_i < 2^W. The
-decisive step is eliminating A -- which has full ~256-bit entropy and so cannot
-be guessed -- by differencing the signature equations against a pivot. That
-turns the corpus into a standard Hidden Number Problem, which a correctly scaled
-Boneh-Venkatesan lattice plus LLL then solves.
+Three mechanisms must all be handled or the lattice silently misses the target:
+
+  1. Each nonce is k = A_g + e with 0 <= e < 2^W. A_g has full ~256-bit entropy,
+     so it cannot be guessed; it is cancelled algebraically by differencing.
+  2. The base A_g is PER SESSION, so differencing is only valid between records
+     of the same session. A single global pivot mixes unrelated bases and the
+     resulting rows are not small.
+  3. Records flagged s_low_normalized store n - s_true, which describes -k
+     instead of +k; the normalisation is undone before use.
+
+The differenced system is a standard Hidden Number Problem, which a correctly
+scaled Boneh-Venkatesan lattice plus LLL then solves.
 
 No seed, generator, or answer key is consulted -- only the public corpus at
 /app/data/signatures.json.
 """
 import json
+from collections import defaultdict
 
 from fpylll import IntegerMatrix, LLL
 
@@ -56,25 +64,34 @@ def mul(k, pt):
 G = (GX, GY)
 
 
+def equations(sigs):
+    """Return differenced (A, T) lists: A_j + T_j * d = (k_j - k_pivot) mod N."""
+    a, t = {}, {}
+    for j, sg in enumerate(sigs):
+        s = int(sg["s"], 16)
+        if sg["s_low_normalized"]:
+            s = (N - s) % N            # mechanism 3: undo the normalisation
+        si = inv(s, N)
+        a[j] = si * int(sg["h"], 16) % N
+        t[j] = si * int(sg["r"], 16) % N
+
+    by_session = defaultdict(list)
+    for j, sg in enumerate(sigs):
+        by_session[sg["session"]].append(j)
+
+    A, T = [], []
+    for _, idxs in sorted(by_session.items()):
+        pivot = idxs[0]                # mechanism 2: pivot within the session
+        for j in idxs[1:]:
+            A.append((a[j] - a[pivot]) % N)
+            T.append((t[j] - t[pivot]) % N)
+    return A, T
+
+
 def recover(pub):
     Q = (int(pub["public_key"]["x"], 16), int(pub["public_key"]["y"], 16))
-    K = 1 << pub["nonce_window_bits"]  # bound on |e_i - e_0|
-    sigs = pub["signatures"]
-
-    # k_i = a_i + t_i * d (mod N)
-    a, t = [], []
-    for sg in sigs:
-        h = int(sg["h"], 16)
-        r = int(sg["r"], 16)
-        s = int(sg["s"], 16)
-        si = inv(s, N)
-        a.append(si * h % N)
-        t.append(si * r % N)
-
-    # Difference against index 0 to cancel the unknown window base A:
-    #   (k_i - k_0) = (a_i - a_0) + (t_i - t_0) d (mod N),   |k_i - k_0| < K
-    A = [(a[i] - a[0]) % N for i in range(1, len(sigs))]
-    T = [(t[i] - t[0]) % N for i in range(1, len(sigs))]
+    K = 1 << pub["nonce_window_bits"]  # bound on |e_j - e_pivot|
+    A, T = equations(pub["signatures"])
     m = len(A)
 
     # Balanced Boneh-Venkatesan lattice: scale residue rows by F=N//K so the
