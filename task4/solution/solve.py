@@ -1,7 +1,7 @@
 """Reference scheduler for dynamo/exec-calendar-triage.
 
-The booking policy in /app/data/policy.md fully determines one schedule. This
-implements it directly; there is no search and no heuristic.
+The booking policy stated in the task description fully determines one
+schedule. This implements it directly; there is no search and no heuristic.
 
 Time is handled as integer minutes since 2026-03-02T00:00:00Z. Every person
 carries an explicit UTC offset, so no time zone database is consulted and the
@@ -31,10 +31,9 @@ whatever follows it.
 No answer key is consulted; only /app/data.
 """
 import json
-import os
 
-DATA = os.environ.get("TRIAGE_DATA", "/app/data")
-OUT = os.environ.get("TRIAGE_OUT", "/app/schedule.json")
+DATA = "/app/data"
+OUT = "/app/schedule.json"
 
 
 def hhmm(s):
