@@ -7,3 +7,6 @@ scratch_validate/
 
 # Transfer artifact (task bundle), not repo content
 dynamo-security-task.tar.gz
+dev2/raw/
+dev2/manifest.json
+dev2/expected.json
