@@ -1,7 +1,7 @@
-You are the executive assistant for a nine-person org spread across three time
-zones. Twenty-six meeting requests came in for the week of Monday 2 March 2026,
-and they have to be booked against calendars that are already partly full. Some
-of them will not fit, and part of the job is saying so.
+Twenty-six meeting requests have come in for the week of Monday 2 March 2026,
+for a nine-person org spread across three time zones. They must be booked
+against calendars that are already partly full, under the org's booking policy.
+Some will not fit, and those must be declined rather than forced.
 
 ## What you have
 
