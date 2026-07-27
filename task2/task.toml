@@ -10,7 +10,7 @@ category = "Data Processing and ETL"
 subcategory = "Media data processing"
 # --- fellow-set ---
 task_objective = ["transform"]
-artifact_type = ["media_artifact"]
+artifact_type = ["generated_output_artifact"]
 expert_time_estimate_hours = 3.0
 model_tested = "Opus-4.8"
 agent_tested = "Terminus-2"
