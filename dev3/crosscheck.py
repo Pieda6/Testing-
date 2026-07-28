@@ -2,7 +2,7 @@
 
 Written from the policy text rather than from solve.py, in a different style
 (explicit minute sets instead of interval scans) so that a shared bug is
-unlikely. If this and solve.py agree on all 26 requests, the policy pins one
+unlikely. If this and solve.py agree on every request, the policy pins one
 schedule and the task is safe to grade exactly.
 """
 import json
@@ -44,6 +44,7 @@ def run(data_dir="."):
 
     def ok(pid, day, start, dur, site, prio):
         p = who[pid]
+        home = p["home_site"]
         if day in p["pto_days"]:
             return False
         end = start + dur
@@ -58,13 +59,28 @@ def run(data_dir="."):
         booked = sum(e - s for s, e, _, d in book[pid] if d == day)
         if booked + dur > cap:
             return False
-        for s, e, st, _d in book[pid]:
-            if s < end and start < e:
+        prev_i = next_i = None
+        for bs, be, st, bd in book[pid]:
+            if bs < end and start < be:
                 return False
-            if e <= start and start - e < trav(st, site):
+            if be <= start and (prev_i is None or be > prev_i[0]):
+                prev_i = (be, st)
+            if bs >= end and (next_i is None or bs < next_i[0]):
+                next_i = (bs, st)
+        # Travel in from the home site to the first engagement of the day, and
+        # home again from the last.
+        ws_ = utc(pid, day, hhmm(p["work_start_local"]))
+        we_ = utc(pid, day, hhmm(p["work_end_local"]))
+        if prev_i is None:
+            if start - ws_ < trav(home, site):
                 return False
-            if s >= end and s - end < trav(site, st):
+        elif start - prev_i[0] < trav(prev_i[1], site):
+            return False
+        if next_i is None:
+            if we_ - end < trav(site, home):
                 return False
+        elif next_i[0] - end < trav(site, next_i[1]):
+            return False
         return True
 
     order = sorted(R, key=lambda r: (r["priority"], -len(r["required"]), r["id"]))

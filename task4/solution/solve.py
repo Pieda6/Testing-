@@ -59,6 +59,7 @@ class Calendar:
         self.ws = hhmm(person["work_start_local"])
         self.we = hhmm(person["work_end_local"])
         self.pto = set(person["pto_days"])
+        self.home = person["home_site"]
         self.busy = []          # (start, end, site)
         self.used = {}          # day -> booked minutes
         for c in person["commitments"]:
@@ -122,10 +123,20 @@ def can_attend(cal, day_index, day, start, dur, site, priority, cfg, sites):
         if bs >= end and (next_item is None or bs < next_item[0]):
             next_item = (bs, be, bsite)
 
-    if prev_item is not None:
+    # A person travels in from their home site to whatever they do first that
+    # day, and home again from whatever they do last, so the first booking of a
+    # day cannot start before their working hours plus that travel, and the last
+    # cannot end later than their working hours minus it.
+    if prev_item is None:
+        if start - ws < travel_needed(sites, cal.home, site):
+            return False
+    else:
         if start - prev_item[1] < travel_needed(sites, prev_item[2], site):
             return False
-    if next_item is not None:
+    if next_item is None:
+        if we - end < travel_needed(sites, site, cal.home):
+            return False
+    else:
         if next_item[0] - end < travel_needed(sites, site, next_item[2]):
             return False
     return True

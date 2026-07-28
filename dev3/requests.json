@@ -409,6 +409,225 @@
       ],
       "earliest_day": "2026-03-02",
       "latest_day": "2026-03-05"
+    },
+    {
+      "id": "REQ-027",
+      "title": "Meeting REQ-027",
+      "priority": 2,
+      "duration_min": 90,
+      "site": "hq",
+      "required": [
+        "fen",
+        "gita"
+      ],
+      "optional": [],
+      "earliest_day": "2026-03-04",
+      "latest_day": "2026-03-06"
+    },
+    {
+      "id": "REQ-028",
+      "title": "Meeting REQ-028",
+      "priority": 3,
+      "duration_min": 60,
+      "site": "remote",
+      "required": [
+        "cyrus",
+        "dara",
+        "fen"
+      ],
+      "optional": [],
+      "earliest_day": "2026-03-03",
+      "latest_day": "2026-03-04"
+    },
+    {
+      "id": "REQ-029",
+      "title": "Meeting REQ-029",
+      "priority": 2,
+      "duration_min": 30,
+      "site": "hq",
+      "required": [
+        "bianca",
+        "cyrus",
+        "emeka",
+        "gita",
+        "iris"
+      ],
+      "optional": [],
+      "earliest_day": "2026-03-03",
+      "latest_day": "2026-03-04"
+    },
+    {
+      "id": "REQ-030",
+      "title": "Meeting REQ-030",
+      "priority": 1,
+      "duration_min": 90,
+      "site": "hq",
+      "required": [
+        "fen",
+        "gita"
+      ],
+      "optional": [],
+      "earliest_day": "2026-03-04",
+      "latest_day": "2026-03-05"
+    },
+    {
+      "id": "REQ-031",
+      "title": "Meeting REQ-031",
+      "priority": 1,
+      "duration_min": 30,
+      "site": "remote",
+      "required": [
+        "amara",
+        "bianca",
+        "hugo"
+      ],
+      "optional": [],
+      "earliest_day": "2026-03-04",
+      "latest_day": "2026-03-05"
+    },
+    {
+      "id": "REQ-032",
+      "title": "Meeting REQ-032",
+      "priority": 3,
+      "duration_min": 30,
+      "site": "lab",
+      "required": [
+        "cyrus",
+        "emeka",
+        "iris"
+      ],
+      "optional": [
+        "dara"
+      ],
+      "earliest_day": "2026-03-02",
+      "latest_day": "2026-03-05"
+    },
+    {
+      "id": "REQ-033",
+      "title": "Meeting REQ-033",
+      "priority": 3,
+      "duration_min": 45,
+      "site": "annex",
+      "required": [
+        "amara",
+        "bianca",
+        "hugo"
+      ],
+      "optional": [],
+      "earliest_day": "2026-03-02",
+      "latest_day": "2026-03-04"
+    },
+    {
+      "id": "REQ-034",
+      "title": "Meeting REQ-034",
+      "priority": 3,
+      "duration_min": 30,
+      "site": "hq",
+      "required": [
+        "emeka",
+        "gita",
+        "hugo"
+      ],
+      "optional": [],
+      "earliest_day": "2026-03-04",
+      "latest_day": "2026-03-05"
+    },
+    {
+      "id": "REQ-035",
+      "title": "Meeting REQ-035",
+      "priority": 3,
+      "duration_min": 60,
+      "site": "lab",
+      "required": [
+        "fen",
+        "gita"
+      ],
+      "optional": [],
+      "earliest_day": "2026-03-04",
+      "latest_day": "2026-03-06"
+    },
+    {
+      "id": "REQ-036",
+      "title": "Meeting REQ-036",
+      "priority": 2,
+      "duration_min": 30,
+      "site": "hq",
+      "required": [
+        "fen",
+        "gita",
+        "hugo"
+      ],
+      "optional": [
+        "amara",
+        "bianca"
+      ],
+      "earliest_day": "2026-03-03",
+      "latest_day": "2026-03-06"
+    },
+    {
+      "id": "REQ-037",
+      "title": "Meeting REQ-037",
+      "priority": 3,
+      "duration_min": 60,
+      "site": "remote",
+      "required": [
+        "fen",
+        "gita"
+      ],
+      "optional": [],
+      "earliest_day": "2026-03-04",
+      "latest_day": "2026-03-06"
+    },
+    {
+      "id": "REQ-038",
+      "title": "Meeting REQ-038",
+      "priority": 2,
+      "duration_min": 30,
+      "site": "annex",
+      "required": [
+        "amara",
+        "bianca",
+        "fen",
+        "gita",
+        "hugo"
+      ],
+      "optional": [],
+      "earliest_day": "2026-03-02",
+      "latest_day": "2026-03-04"
+    },
+    {
+      "id": "REQ-039",
+      "title": "Meeting REQ-039",
+      "priority": 3,
+      "duration_min": 30,
+      "site": "hq",
+      "required": [
+        "cyrus",
+        "dara",
+        "emeka",
+        "iris"
+      ],
+      "optional": [],
+      "earliest_day": "2026-03-02",
+      "latest_day": "2026-03-03"
+    },
+    {
+      "id": "REQ-040",
+      "title": "Meeting REQ-040",
+      "priority": 2,
+      "duration_min": 45,
+      "site": "lab",
+      "required": [
+        "cyrus",
+        "dara",
+        "fen",
+        "iris"
+      ],
+      "optional": [
+        "emeka"
+      ],
+      "earliest_day": "2026-03-02",
+      "latest_day": "2026-03-04"
     }
   ]
 }

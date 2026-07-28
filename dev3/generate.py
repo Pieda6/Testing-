@@ -71,7 +71,7 @@ LUNCH_LOCAL = "12:00"
 LUNCH_MIN = 30
 DAILY_CAP_MIN = 240         # per person, including standing commitments
 
-N_REQUESTS = 26
+N_REQUESTS = 40
 
 # Two rules -- the priority-1 lunch exemption and the daily cap boundary -- are
 # only real if some booking actually exercises them. Left to the seed alone they

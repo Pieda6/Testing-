@@ -1,4 +1,4 @@
-Twenty-six meeting requests have come in for the week of Monday 2 March 2026,
+Forty meeting requests have come in for the week of Monday 2 March 2026,
 for a nine-person org spread across three time zones. They must be booked
 against calendars that are already partly full, under the org's booking policy.
 Some will not fit, and those must be declined rather than forced.
@@ -15,7 +15,7 @@ local start, a duration, and a location).
 each pair, and the buffer needed when someone switches between remote and any
 site.
 
-`/app/data/requests.json` — the twenty-six requests, each with an id, priority,
+`/app/data/requests.json` — the forty requests, each with an id, priority,
 duration, location, required attendees, optional attendees, and the earliest and
 latest day it may be booked on.
 
@@ -33,7 +33,10 @@ required attendee:
 4. Between it and whatever immediately precedes or follows it on their calendar
    that day, there is at least the travel time from `sites.json` — nothing if
    the two are at the same location, `remote_switch_min` if one is remote and
-   the other is a site, otherwise the site-to-site figure.
+   the other is a site, otherwise the site-to-site figure. Everyone starts and
+   ends their day at their own `home_site`, so the same allowance is needed
+   between the start of their working hours and their first engagement of the
+   day, and between their last engagement and the end of their working hours.
 5. It does not overlap their protected lunch, which runs `lunch_minutes` from
    `lunch_start_local` in their local time. **Priority 1 meetings may overlap
    lunch; priority 2 and 3 may not.**
@@ -81,5 +84,5 @@ Your submission is correct when both of the following hold:
    appear in `requests.json`, using the field names, types and value formats
    described above.
 2. Every entry matches the booking the policy produces — the same status, the
-   same day and start instant, and the same attendee list. All twenty-six must
-   be right.
+   same day and start instant, and the same attendee list. All forty must be
+   right.

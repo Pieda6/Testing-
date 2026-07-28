@@ -19,7 +19,7 @@ _ORIG = S.can_attend
 
 
 def _checker(lunch_exempt=1, cap_strict=True, travel=True, hours=True,  # noqa
-             overlap=True, pto=True, cap=True, lunch=True):
+             overlap=True, pto=True, cap=True, lunch=True, home=True):
     def f(cal, di, day, start, dur, site, priority, cfg, sites):
         if pto and day in cal.pto:
             return False
@@ -46,10 +46,17 @@ def _checker(lunch_exempt=1, cap_strict=True, travel=True, hours=True,  # noqa
                 pv = (bs, be, bsite)
             if bs >= end and (nx is None or bs < nx[0]):
                 nx = (bs, be, bsite)
+        ws2, we2 = cal.work_window(di)
         if travel:
-            if pv and start - pv[1] < S.travel_needed(sites, pv[2], site):
+            if pv is None:
+                if home and start - ws2 < S.travel_needed(sites, cal.home, site):
+                    return False
+            elif start - pv[1] < S.travel_needed(sites, pv[2], site):
                 return False
-            if nx and nx[0] - end < S.travel_needed(sites, site, nx[2]):
+            if nx is None:
+                if home and we2 - end < S.travel_needed(sites, site, cal.home):
+                    return False
+            elif nx[0] - end < S.travel_needed(sites, site, nx[2]):
                 return False
         return True
     return f
@@ -124,6 +131,7 @@ MUTATIONS = [
     ("daily cap ignored",            dict(cap=False)),
     ("protected lunch ignored",      dict(lunch=False)),
     ("PTO ignored",                  dict(pto=False)),
+    ("home-site travel ignored",     dict(home=False)),
 ]
 ORDER_MUTATIONS = [
     ("ordered by priority only", "priority_only"),
