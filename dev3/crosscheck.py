@@ -42,7 +42,7 @@ def run(data_dir="."):
             s = utc(pid, c["day"], hhmm(c["start_local"]))
             book[pid].append((s, s + c["duration_min"], c["site"], c["day"]))
 
-    def ok(pid, day, start, dur, site, prio):
+    def ok(bk, pid, day, start, dur, site, prio):
         p = who[pid]
         home = p["home_site"]
         if day in p["pto_days"]:
@@ -56,11 +56,11 @@ def run(data_dir="."):
             ls = utc(pid, day, lstart)
             if start < ls + llen and ls < end:
                 return False
-        booked = sum(e - s for s, e, _, d in book[pid] if d == day)
+        booked = sum(e - s for s, e, _, d in bk[pid] if d == day)
         if booked + dur > cap:
             return False
         prev_i = next_i = None
-        for bs, be, st, bd in book[pid]:
+        for bs, be, st, bd in bk[pid]:
             if bs < end and start < be:
                 return False
             if be <= start and (prev_i is None or be > prev_i[0]):
@@ -83,11 +83,10 @@ def run(data_dir="."):
             return False
         return True
 
-    order = sorted(R, key=lambda r: (r["priority"], -len(r["required"]), r["id"]))
-    res = {}
-    for r in order:
+    def slots_for(bk, r, limit=None):
+        """Feasible slots in day-then-time order, using calendar state bk."""
+        found = []
         dur, site, prio = r["duration_min"], r["site"], r["priority"]
-        hit = None
         for day in days:
             if not (r["earliest_day"] <= day <= r["latest_day"]):
                 continue
@@ -97,26 +96,57 @@ def run(data_dir="."):
                      for p in r["required"])
             t = -(-lo // slot) * slot
             while t + dur <= hi:
-                if all(ok(p, day, t, dur, site, prio) for p in r["required"]):
-                    hit = (day, t)
-                    break
+                if all(ok(bk, p, day, t, dur, site, prio) for p in r["required"]):
+                    found.append((day, t))
+                    if limit and len(found) >= limit:
+                        return found
                 t += slot
-            if hit:
-                break
-        if not hit:
+        return found
+
+    def who_comes(bk, r, day, t):
+        return sorted(set(r["required"]) |
+                      {p for p in r["optional"]
+                       if ok(bk, p, day, t, r["duration_min"], r["site"],
+                             r["priority"])})
+
+    def put(bk, r, day, t, people):
+        for p in people:
+            bk[p] = bk[p] + [(t, t + r["duration_min"], r["site"], day)]
+
+    def fill(bk, queue):
+        n = 0
+        for r in queue:
+            hit = slots_for(bk, r, limit=1)
+            if not hit:
+                continue
+            day, t = hit[0]
+            put(bk, r, day, t, who_comes(bk, r, day, t))
+            n += 1
+        return n
+
+    order = sorted(R, key=lambda r: (r["priority"], -len(r["required"]), r["id"]))
+    res = {}
+    for idx, r in enumerate(order):
+        cands = slots_for(book, r, limit=6)
+        if not cands:
             res[r["id"]] = {"status": "declined", "day": "", "start_utc": "",
                             "attendees": []}
             continue
-        day, t = hit
-        going = sorted(set(r["required"]) |
-                       {p for p in r["optional"]
-                        if ok(p, day, t, dur, site, prio)})
-        for p in going:
-            book[p].append((t, t + dur, site, day))
+        pick = None
+        for day, t in cands:
+            trial = {k: list(v) for k, v in book.items()}
+            put(trial, r, day, t, who_comes(trial, r, day, t))
+            kept = fill(trial, order[idx + 1:idx + 9])
+            if pick is None or kept > pick[0]:
+                pick = (kept, day, t)
+        _, day, t = pick
+        going = who_comes(book, r, day, t)
+        put(book, r, day, t, going)
         iso = (datetime.strptime(days[0], "%Y-%m-%d")
                + timedelta(minutes=t)).strftime("%Y-%m-%dT%H:%M:%SZ")
         res[r["id"]] = {"status": "scheduled", "day": day, "start_utc": iso,
                         "attendees": going}
+
     return [dict(id=r["id"], **res[r["id"]]) for r in R]
 
 

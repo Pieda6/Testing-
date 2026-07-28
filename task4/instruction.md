@@ -47,9 +47,14 @@ Requests are considered in this order: priority 1 first, then 2, then 3; within
 the same priority, the request with more required attendees comes first; if that
 still ties, the lower request id comes first.
 
-Each request is booked into the **earliest slot that works** — the earliest day
-in its window, and within that day the earliest start on the 15-minute grid.
-If no slot in its window works, the request is declined.
+If no slot in its window works, the request is declined. Otherwise the slot is
+chosen by what it costs the requests still to come, not by being earliest. Take
+the **first six** slots that work, in day-then-time order on the 15-minute grid.
+For each, tentatively book the request there — with the same attendees it would
+really have — then place the **next eight** requests in the order above, one at a
+time, each into the earliest slot that then works for it, and count how many of
+those eight get placed. The request takes the slot with the highest count; if
+several tie, the earliest of them.
 
 Once the slot is fixed, each optional attendee joins if conditions 1–6 hold for
 them individually at that slot. An optional attendee who cannot make it is left

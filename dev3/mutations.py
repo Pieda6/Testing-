@@ -62,7 +62,7 @@ def _checker(lunch_exempt=1, cap_strict=True, travel=True, hours=True,  # noqa
     return f
 
 
-def run(data_dir, order="policy", **kw):
+def run(data_dir, order="policy", candidates=None, **kw):
     P = json.load(open(data_dir + "/people.json"))
     St = json.load(open(data_dir + "/sites.json"))
     R = json.load(open(data_dir + "/requests.json"))["requests"]
@@ -71,56 +71,65 @@ def run(data_dir, order="policy", **kw):
     keys = {"policy": lambda r: (r["priority"], -len(r["required"]), r["id"]),
             "priority_only": lambda r: (r["priority"],),
             "catalogue": lambda r: 0}
-    out = _solve_with_order(S, P, St, R, sorted(R, key=keys[order]),
-                            prune=kw.get("hours", True))
-    S.can_attend = _ORIG
-    return out
+    days, slot, cfg = P["days"], P["slot_minutes"], P
+    cals = {p["id"]: S.Calendar(p, days) for p in P["people"]}
+    seq = sorted(R, key=keys[order])
+    ncand = S.CANDIDATES if candidates is None else candidates
 
+    prune = kw.get("hours", True)
 
-def _solve_with_order(S, people_doc, sites, requests, order, prune=True):
-    days = people_doc["days"]
-    slot = people_doc["slot_minutes"]
-    cals = {p["id"]: S.Calendar(p, days) for p in people_doc["people"]}
-    placed = {}
-    for req in order:
+    def slots(state, req, limit=None):
+        if prune:
+            return S.feasible_slots(state, req, days, slot, cfg, St, limit=limit)
+        # A solver that ignores working hours would not prune to them either.
+        out = []
         dur, site, prio = req["duration_min"], req["site"], req["priority"]
-        d_from = days.index(req["earliest_day"])
-        d_to = days.index(req["latest_day"])
-        chosen = None
-        for d in range(d_from, d_to + 1):
+        for d in range(days.index(req["earliest_day"]),
+                       days.index(req["latest_day"]) + 1):
             day = days[d]
-            if prune:
-                wins = [cals[p].work_window(d) for p in req["required"]]
-                lo, hi = max(w[0] for w in wins), min(w[1] for w in wins)
-                if hi - lo < dur:
-                    continue
-            else:
-                lo, hi = d * 1440, (d + 1) * 1440
-            first = ((lo + slot - 1) // slot) * slot
-            for start in range(first, hi - dur + 1, slot):
-                if all(S.can_attend(cals[p], d, day, start, dur, site, prio,
-                                    people_doc, sites) for p in req["required"]):
-                    chosen = (d, day, start)
-                    break
-            if chosen:
-                break
-        if chosen is None:
+            for start in range(d * 1440, (d + 1) * 1440 - dur + 1, slot):
+                if all(S.can_attend(state[p], d, day, start, dur, site, prio,
+                                    cfg, St) for p in req["required"]):
+                    out.append((d, day, start))
+                    if limit and len(out) >= limit:
+                        return out
+        return out
+
+    def fill(state, queue):
+        n = 0
+        for r in queue:
+            hit = slots(state, r, limit=1)
+            if not hit:
+                continue
+            d, day, start = hit[0]
+            S.commit(state, r, day, start,
+                     S.attendees_at(state, r, d, day, start, cfg, St))
+            n += 1
+        return n
+
+    placed = {}
+    for idx, req in enumerate(seq):
+        cands = slots(cals, req, limit=ncand)
+        if not cands:
             placed[req["id"]] = {"status": "declined", "day": "",
                                  "start_utc": "", "attendees": []}
             continue
-        d, day, start = chosen
-        going = list(req["required"])
-        for p in req["optional"]:
-            if S.can_attend(cals[p], d, day, start, dur, site, prio,
-                            people_doc, sites):
-                going.append(p)
-        going.sort()
-        for p in going:
-            cals[p].add(start, start + dur, site, day)
+        best = None
+        for d, day, start in cands:
+            trial = {k: v.clone() for k, v in cals.items()}
+            S.commit(trial, req, day, start,
+                     S.attendees_at(trial, req, d, day, start, cfg, St))
+            kept = fill(trial, seq[idx + 1:idx + 1 + S.LOOKAHEAD])
+            if best is None or kept > best[0]:
+                best = (kept, d, day, start)
+        _, d, day, start = best
+        going = S.attendees_at(cals, req, d, day, start, cfg, St)
+        S.commit(cals, req, day, start, going)
         placed[req["id"]] = {"status": "scheduled", "day": day,
-                             "start_utc": S.fmt_utc(d, days, start),
+                             "start_utc": S.fmt_utc(days, start),
                              "attendees": going}
-    return [dict(id=r["id"], **placed[r["id"]]) for r in requests]
+    S.can_attend = _ORIG
+    return [dict(id=r["id"], **placed[r["id"]]) for r in R]
 
 
 MUTATIONS = [
@@ -132,6 +141,7 @@ MUTATIONS = [
     ("protected lunch ignored",      dict(lunch=False)),
     ("PTO ignored",                  dict(pto=False)),
     ("home-site travel ignored",     dict(home=False)),
+    ("greedy: earliest slot always", dict(_greedy=True)),
 ]
 ORDER_MUTATIONS = [
     ("ordered by priority only", "priority_only"),
@@ -143,7 +153,10 @@ def report(data_dir):
     base = run(data_dir)
     rows = []
     for name, kw in MUTATIONS:
-        got = run(data_dir, **kw)
+        if kw.pop("_greedy", False):
+            got = run(data_dir, candidates=1)
+        else:
+            got = run(data_dir, **kw)
         rows.append((name, [a["id"] for a, b in zip(got, base) if a != b]))
     for name, order in ORDER_MUTATIONS:
         got = run(data_dir, order=order)

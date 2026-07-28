@@ -1,7 +1,7 @@
 """Reference scheduler for dynamo/exec-calendar-triage.
 
-The booking policy stated in the task description fully determines one
-schedule. This implements it directly; there is no search and no heuristic.
+The booking policy stated in the task description fully determines one schedule.
+This implements it directly.
 
 Time is handled as integer minutes since 2026-03-02T00:00:00Z. Every person
 carries an explicit UTC offset, so no time zone database is consulted and the
@@ -9,24 +9,21 @@ result does not depend on the platform. Local midnight of day d for a person
 whose offset is `off` sits at (d * 1440 - off) UTC minutes, which is the one
 conversion the whole file rests on.
 
-Order of work:
-
-  1. Sort the requests the way the policy says they get considered: priority
-     ascending, then required-attendee count descending, then id ascending.
-  2. For each request in that order, walk the days of its window in order and
-     the 15-minute grid within each day in order, and take the FIRST start that
-     every required attendee can make. Because the scan order is total, the
-     choice is unique -- there is no tie to break.
-  3. Having fixed the slot, admit each optional attendee who independently
-     clears the same checks.
-  4. Commit the booking so it constrains everything placed after it.
+The part that is not a single forward pass is slot choice. Taking each request's
+earliest feasible slot is what an obvious implementation does, and it is wrong
+here: an early slot can consume the only window a later request had. So the
+policy weighs a request's first few feasible slots by what each leaves behind --
+tentatively book it, run the next several requests greedily, and count how many
+of those still fit. The slot that strands the fewest wins, earliest breaking
+ties. That keeps the answer unique while making a greedy solver diverge.
 
 A slot works for a person only if all of these hold: they are not on PTO that
 day; the meeting sits inside their working window; it does not overlap anything
 already on their calendar; it does not touch their protected lunch unless the
 meeting is priority 1; it does not push their booked minutes for the day past
 the cap; and there is enough room to travel from whatever precedes it and to
-whatever follows it.
+whatever follows it -- counting their own home site as where they start and end
+the day.
 
 No answer key is consulted; only /app/data.
 """
@@ -35,25 +32,28 @@ import json
 DATA = "/app/data"
 OUT = "/app/schedule.json"
 
+# Both stated in the task description.
+CANDIDATES = 6          # feasible slots weighed per request
+LOOKAHEAD = 8           # subsequent requests used to score a candidate
+
 
 def hhmm(s):
     h, m = s.split(":")
     return int(h) * 60 + int(m)
 
 
-def fmt_utc(day_index, days, minute_of_week):
+def fmt_utc(days, minute_of_week):
     """Minutes-since-week-epoch -> ISO 8601 Zulu."""
     import datetime
     base = datetime.datetime.strptime(days[0], "%Y-%m-%d")
-    t = base + datetime.timedelta(minutes=minute_of_week)
-    return t.strftime("%Y-%m-%dT%H:%M:%SZ")
+    return (base + datetime.timedelta(minutes=minute_of_week)).strftime(
+        "%Y-%m-%dT%H:%M:%SZ")
 
 
 class Calendar:
     """Per-person occupied intervals, in UTC minutes, each tagged with a site."""
 
     def __init__(self, person, days):
-        self.p = person
         self.days = days
         self.off = person["utc_offset_min"]
         self.ws = hhmm(person["work_start_local"])
@@ -68,6 +68,15 @@ class Calendar:
             self.busy.append((s, s + c["duration_min"], c["site"]))
             self.used[c["day"]] = self.used.get(c["day"], 0) + c["duration_min"]
         self.busy.sort()
+
+    def clone(self):
+        """Cheap copy, for scoring a candidate slot without committing it."""
+        c = Calendar.__new__(Calendar)
+        c.days, c.off, c.ws, c.we = self.days, self.off, self.ws, self.we
+        c.pto, c.home = self.pto, self.home
+        c.busy = list(self.busy)
+        c.used = dict(self.used)
+        return c
 
     def local_to_utc(self, day_index, local_min):
         return day_index * 1440 - self.off + local_min
@@ -123,23 +132,69 @@ def can_attend(cal, day_index, day, start, dur, site, priority, cfg, sites):
         if bs >= end and (next_item is None or bs < next_item[0]):
             next_item = (bs, be, bsite)
 
-    # A person travels in from their home site to whatever they do first that
-    # day, and home again from whatever they do last, so the first booking of a
-    # day cannot start before their working hours plus that travel, and the last
-    # cannot end later than their working hours minus it.
+    # People travel in from their home site to the first engagement of the day
+    # and home again from the last, so the ends of the working window carry the
+    # same allowance an adjacent booking would.
     if prev_item is None:
         if start - ws < travel_needed(sites, cal.home, site):
             return False
-    else:
-        if start - prev_item[1] < travel_needed(sites, prev_item[2], site):
-            return False
+    elif start - prev_item[1] < travel_needed(sites, prev_item[2], site):
+        return False
     if next_item is None:
         if we - end < travel_needed(sites, site, cal.home):
             return False
-    else:
-        if next_item[0] - end < travel_needed(sites, site, next_item[2]):
-            return False
+    elif next_item[0] - end < travel_needed(sites, site, next_item[2]):
+        return False
     return True
+
+
+def feasible_slots(cals, req, days, slot, cfg, sites, limit=None):
+    """Slots this request could take, in day-then-time order."""
+    out = []
+    dur, site, prio = req["duration_min"], req["site"], req["priority"]
+    for d in range(days.index(req["earliest_day"]),
+                   days.index(req["latest_day"]) + 1):
+        day = days[d]
+        wins = [cals[p].work_window(d) for p in req["required"]]
+        lo, hi = max(w[0] for w in wins), min(w[1] for w in wins)
+        if hi - lo < dur:
+            continue
+        for start in range(((lo + slot - 1) // slot) * slot, hi - dur + 1, slot):
+            if all(can_attend(cals[p], d, day, start, dur, site, prio, cfg,
+                              sites) for p in req["required"]):
+                out.append((d, day, start))
+                if limit and len(out) >= limit:
+                    return out
+    return out
+
+
+def attendees_at(cals, req, d, day, start, cfg, sites):
+    going = list(req["required"])
+    for p in req["optional"]:
+        if can_attend(cals[p], d, day, start, req["duration_min"], req["site"],
+                      req["priority"], cfg, sites):
+            going.append(p)
+    going.sort()
+    return going
+
+
+def commit(cals, req, day, start, going):
+    for p in going:
+        cals[p].add(start, start + req["duration_min"], req["site"], day)
+
+
+def greedy_fill(cals, queue, days, slot, cfg, sites):
+    """How many of `queue` still fit, each taking its earliest feasible slot."""
+    n = 0
+    for req in queue:
+        hit = feasible_slots(cals, req, days, slot, cfg, sites, limit=1)
+        if not hit:
+            continue
+        d, day, start = hit[0]
+        commit(cals, req, day, start,
+               attendees_at(cals, req, d, day, start, cfg, sites))
+        n += 1
+    return n
 
 
 def solve(people_doc, sites, requests):
@@ -152,52 +207,30 @@ def solve(people_doc, sites, requests):
                    key=lambda r: (r["priority"], -len(r["required"]), r["id"]))
 
     placed = {}
-    for req in order:
-        dur = req["duration_min"]
-        site = req["site"]
-        prio = req["priority"]
-        d_from = days.index(req["earliest_day"])
-        d_to = days.index(req["latest_day"])
-
-        chosen = None
-        for d in range(d_from, d_to + 1):
-            day = days[d]
-            # Candidate window: the intersection of every required attendee's
-            # working window for this day, walked on the grid.
-            wins = [cals[p].work_window(d) for p in req["required"]]
-            lo = max(w[0] for w in wins)
-            hi = min(w[1] for w in wins)
-            if hi - lo < dur:
-                continue
-            first = ((lo + slot - 1) // slot) * slot
-            for start in range(first, hi - dur + 1, slot):
-                if all(can_attend(cals[p], d, day, start, dur, site, prio,
-                                  cfg, sites) for p in req["required"]):
-                    chosen = (d, day, start)
-                    break
-            if chosen:
-                break
-
-        if chosen is None:
+    for i, req in enumerate(order):
+        cands = feasible_slots(cals, req, days, slot, cfg, sites,
+                               limit=CANDIDATES)
+        if not cands:
             placed[req["id"]] = {"status": "declined", "day": "",
                                  "start_utc": "", "attendees": []}
             continue
 
-        d, day, start = chosen
-        going = list(req["required"])
-        for p in req["optional"]:
-            if can_attend(cals[p], d, day, start, dur, site, prio, cfg, sites):
-                going.append(p)
-        going.sort()
-        for p in going:
-            cals[p].add(start, start + dur, site, day)
+        queue = order[i + 1:i + 1 + LOOKAHEAD]
+        best = None
+        for d, day, start in cands:
+            trial = {k: v.clone() for k, v in cals.items()}
+            commit(trial, req, day, start,
+                   attendees_at(trial, req, d, day, start, cfg, sites))
+            kept = greedy_fill(trial, queue, days, slot, cfg, sites)
+            if best is None or kept > best[0]:
+                best = (kept, d, day, start)
 
-        placed[req["id"]] = {
-            "status": "scheduled",
-            "day": day,
-            "start_utc": fmt_utc(d, days, start),
-            "attendees": going,
-        }
+        _, d, day, start = best
+        going = attendees_at(cals, req, d, day, start, cfg, sites)
+        commit(cals, req, day, start, going)
+        placed[req["id"]] = {"status": "scheduled", "day": day,
+                             "start_utc": fmt_utc(days, start),
+                             "attendees": going}
 
     # Emit in catalogue order, not placement order.
     return [dict(id=r["id"], **placed[r["id"]]) for r in requests]
@@ -215,9 +248,9 @@ def main():
     with open(OUT, "w") as f:
         json.dump({"schedule": rows}, f)
 
-    n_sched = sum(1 for r in rows if r["status"] == "scheduled")
+    n = sum(1 for r in rows if r["status"] == "scheduled")
     print("scheduled %d of %d requests (%d declined) -> %s"
-          % (n_sched, len(rows), len(rows) - n_sched, OUT))
+          % (n, len(rows), len(rows) - n, OUT))
 
 
 if __name__ == "__main__":
