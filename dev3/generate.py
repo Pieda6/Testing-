@@ -28,7 +28,7 @@ Emits:
 import hashlib
 import json
 
-SEED = b"dynamo/exec-calendar/v1"
+SEED = b"dynamo/exec-calendar/v3"
 
 # Mon-Fri. Chosen to sit before the 2026 US DST change so fixed offsets hold
 # all week; offsets are stored in the data regardless.
@@ -72,6 +72,20 @@ LUNCH_MIN = 30
 DAILY_CAP_MIN = 240         # per person, including standing commitments
 
 N_REQUESTS = 26
+
+# Two rules -- the priority-1 lunch exemption and the daily cap boundary -- are
+# only real if some booking actually exercises them. Left to the seed alone they
+# never fire: no priority-1 meeting ever wants a lunch slot, and no one ever
+# reaches the cap. So one day is designed rather than sampled. fen and gita have
+# their Tuesday mornings filled to 12:00 and to 210 booked minutes, which makes
+# the earliest slot left that day the lunch slot, and makes a 30-minute booking
+# land on exactly 240. A priority-1 request may take it; a priority-2 one may
+# not, and a cap test written with >= instead of > rejects it.
+DESIGNED_DAY = "2026-03-03"
+DESIGNED = {
+    "fen": [("08:00", 60, "lab"), ("09:15", 60, "lab"), ("10:30", 90, "lab")],
+    "gita": [("08:00", 60, "lab"), ("09:15", 60, "lab"), ("10:30", 90, "lab")],
+}
 
 
 def det_bytes(counter, n):
@@ -117,6 +131,11 @@ def build_people():
         commitments = []
         for d_i, day in enumerate(DAYS):
             if day in pto:
+                continue
+            if pid in DESIGNED and day == DESIGNED_DAY:
+                for st, dur, site in DESIGNED[pid]:
+                    commitments.append({"day": day, "start_local": st,
+                                        "duration_min": dur, "site": site})
                 continue
             n = det_int(f"ncom{pid}{d_i}", 16) % 3      # 0..2 standing blocks
             used = []
