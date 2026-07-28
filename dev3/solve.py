@@ -22,8 +22,8 @@ day; the meeting sits inside their working window; it does not overlap anything
 already on their calendar; it does not touch their protected lunch unless the
 meeting is priority 1; it does not push their booked minutes for the day past
 the cap; and there is enough room to travel from whatever precedes it and to
-whatever follows it -- counting their own home site as where they start and end
-the day.
+whatever follows it that same day -- counting their own home site as where they
+travel in from when nothing precedes it.
 
 No answer key is consulted; only /app/data.
 """
