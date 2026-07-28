@@ -115,12 +115,29 @@ def main(data_dir=".", sched_path="expected_raw.json"):
                                 "needs %d" % (pid, b[0] - a[1], a[4], a[2],
                                               b[4], b[2], need))
         per_day = {}
-        for s, e, _site, day, _who in items:
+        by_day = {}
+        for it in items:
+            s, e, _site, day, _who = it
             per_day[day] = per_day.get(day, 0) + (e - s)
+            by_day.setdefault(day, []).append(it)
         for day, mins in per_day.items():
             if mins > cap:
                 errs.append("%s: %d booked minutes on %s exceeds cap %d"
                             % (pid, mins, day, cap))
+
+        # The start of the day: everyone travels in from their home site, so the
+        # first engagement needs the same allowance a neighbour would have
+        # required. Checked on the finished calendar, which is where a solver
+        # that only compares adjacent bookings gets caught.
+        home = pp[pid]["home_site"]
+        for day, its in by_day.items():
+            ws = to_utc(pid, day, hhmm(pp[pid]["work_start_local"]))
+            first = its[0]
+            if first[0] - ws < travel(home, first[2]):
+                errs.append("%s on %s: %s at %s starts %d min into the day, "
+                            "needs %d to travel from home (%s)"
+                            % (pid, day, first[4], first[2], first[0] - ws,
+                               travel(home, first[2]), home))
 
     n_sched = sum(1 for r in rows if r["status"] == "scheduled")
     print("checked %d rows (%d scheduled, %d declined)"

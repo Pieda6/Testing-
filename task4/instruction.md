@@ -30,13 +30,14 @@ required attendee:
 2. The meeting sits entirely inside their working hours **for that day in their
    own local time**.
 3. It does not overlap anything already on their calendar.
-4. Between it and whatever immediately precedes or follows it on their calendar
-   that day, there is at least the travel time from `sites.json` — nothing if
-   the two are at the same location, `remote_switch_min` if one is remote and
-   the other is a site, otherwise the site-to-site figure. Everyone starts and
-   ends their day at their own `home_site`, so the same allowance is needed
-   between the start of their working hours and their first engagement of the
-   day, and between their last engagement and the end of their working hours.
+4. Between it and whatever immediately precedes or follows it **on that same
+   day**, there is at least the travel time from `sites.json` — nothing if the
+   two are at the same location, `remote_switch_min` if one is remote and the
+   other is a site, otherwise the site-to-site figure. Everyone starts their day
+   at their own `home_site`, so if nothing precedes it that day, that allowance
+   is instead needed between the start of their working hours and the meeting.
+   Nothing is required after their last engagement: they travel home on their
+   own time.
 5. It does not overlap their protected lunch, which runs `lunch_minutes` from
    `lunch_start_local` in their local time. **Priority 1 meetings may overlap
    lunch; priority 2 and 3 may not.**

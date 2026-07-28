@@ -6,7 +6,7 @@ never copied into the agent's image, so the answer is not reachable from inside
 the task.
 
 The policy determines exactly one schedule -- two independently written
-implementations of it agree on all 26 requests -- so the comparison is exact and
+implementations of it agree on all 40 requests -- so the comparison is exact and
 there is no tolerance to calibrate.
 """
 import json

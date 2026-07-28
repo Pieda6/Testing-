@@ -60,12 +60,12 @@ class Calendar:
         self.we = hhmm(person["work_end_local"])
         self.pto = set(person["pto_days"])
         self.home = person["home_site"]
-        self.busy = []          # (start, end, site)
+        self.busy = []          # (start, end, site, day)
         self.used = {}          # day -> booked minutes
         for c in person["commitments"]:
             d = days.index(c["day"])
             s = self.local_to_utc(d, hhmm(c["start_local"]))
-            self.busy.append((s, s + c["duration_min"], c["site"]))
+            self.busy.append((s, s + c["duration_min"], c["site"], c["day"]))
             self.used[c["day"]] = self.used.get(c["day"], 0) + c["duration_min"]
         self.busy.sort()
 
@@ -90,7 +90,7 @@ class Calendar:
         return (s, s + lunch_len)
 
     def add(self, start, end, site, day):
-        self.busy.append((start, end, site))
+        self.busy.append((start, end, site, day))
         self.busy.sort()
         self.used[day] = self.used.get(day, 0) + (end - start)
 
@@ -124,27 +124,30 @@ def can_attend(cal, day_index, day, start, dur, site, priority, cfg, sites):
 
     prev_item = None
     next_item = None
-    for bs, be, bsite in cal.busy:
+    for bs, be, bsite, bday in cal.busy:
         if bs < end and start < be:
             return False                    # overlap
+        if bday != day:
+            continue        # neighbours are the ones on this day, not the week
         if be <= start and (prev_item is None or be > prev_item[1]):
             prev_item = (bs, be, bsite)
         if bs >= end and (next_item is None or bs < next_item[0]):
             next_item = (bs, be, bsite)
 
-    # People travel in from their home site to the first engagement of the day
-    # and home again from the last, so the ends of the working window carry the
-    # same allowance an adjacent booking would.
+    # People travel in from their home site to the first engagement of the day,
+    # so the start of the working window carries the same allowance an adjacent
+    # booking would. This is why the scan above is restricted to the day in
+    # question: a meeting with nothing before it that day has no neighbour to
+    # travel from, and must instead clear the trip from home. Leaving at the end
+    # of the day is unconstrained -- they travel home on their own time.
     if prev_item is None:
         if start - ws < travel_needed(sites, cal.home, site):
             return False
     elif start - prev_item[1] < travel_needed(sites, prev_item[2], site):
         return False
-    if next_item is None:
-        if we - end < travel_needed(sites, site, cal.home):
+    if next_item is not None:
+        if next_item[0] - end < travel_needed(sites, site, next_item[2]):
             return False
-    elif next_item[0] - end < travel_needed(sites, site, next_item[2]):
-        return False
     return True
 
 

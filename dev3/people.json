@@ -105,12 +105,6 @@
       "commitments": [
         {
           "day": "2026-03-02",
-          "start_local": "08:00",
-          "duration_min": 60,
-          "site": "annex"
-        },
-        {
-          "day": "2026-03-02",
           "start_local": "11:15",
           "duration_min": 45,
           "site": "lab"
@@ -301,12 +295,6 @@
       "home_site": "lab",
       "pto_days": [],
       "commitments": [
-        {
-          "day": "2026-03-02",
-          "start_local": "08:45",
-          "duration_min": 60,
-          "site": "annex"
-        },
         {
           "day": "2026-03-03",
           "start_local": "08:00",

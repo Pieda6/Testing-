@@ -19,7 +19,8 @@ _ORIG = S.can_attend
 
 
 def _checker(lunch_exempt=1, cap_strict=True, travel=True, hours=True,  # noqa
-             overlap=True, pto=True, cap=True, lunch=True, home=True):
+             overlap=True, pto=True, cap=True, lunch=True, home=True,
+             same_day=True):
     def f(cal, di, day, start, dur, site, priority, cfg, sites):
         if pto and day in cal.pto:
             return False
@@ -39,24 +40,23 @@ def _checker(lunch_exempt=1, cap_strict=True, travel=True, hours=True,  # noqa
             if start < le and ls < end:
                 return False
         pv = nx = None
-        for bs, be, bsite in cal.busy:
+        for bs, be, bsite, bday in cal.busy:
             if overlap and bs < end and start < be:
                 return False
+            if same_day and bday != day:
+                continue
             if be <= start and (pv is None or be > pv[1]):
                 pv = (bs, be, bsite)
             if bs >= end and (nx is None or bs < nx[0]):
                 nx = (bs, be, bsite)
-        ws2, we2 = cal.work_window(di)
+        ws2, _we2 = cal.work_window(di)
         if travel:
             if pv is None:
                 if home and start - ws2 < S.travel_needed(sites, cal.home, site):
                     return False
             elif start - pv[1] < S.travel_needed(sites, pv[2], site):
                 return False
-            if nx is None:
-                if home and we2 - end < S.travel_needed(sites, site, cal.home):
-                    return False
-            elif nx[0] - end < S.travel_needed(sites, site, nx[2]):
+            if nx is not None and nx[0] - end < S.travel_needed(sites, site, nx[2]):
                 return False
         return True
     return f
@@ -141,6 +141,7 @@ MUTATIONS = [
     ("protected lunch ignored",      dict(lunch=False)),
     ("PTO ignored",                  dict(pto=False)),
     ("home-site travel ignored",     dict(home=False)),
+    ("neighbours across whole week",  dict(same_day=False)),
     ("greedy: earliest slot always", dict(_greedy=True)),
 ]
 ORDER_MUTATIONS = [

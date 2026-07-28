@@ -151,7 +151,12 @@ def build_people():
                 site = det_pick(f"csite{pid}{d_i}{k}", SITES + ["remote"])
                 # The input calendars must themselves obey the travel rule --
                 # otherwise the data contradicts the policy the agent is asked
-                # to apply.
+                # to apply. That includes the start of the day: people travel in
+                # from their home site, so a standing commitment cannot sit
+                # closer to the opening of the working window than the trip in
+                # takes.
+                if start_local - hhmm_to_min(ws) < travel_between(home, site):
+                    continue
                 if any(start_local + dur + travel_between(site, s_site) > s
                        and s + t + travel_between(s_site, site) > start_local
                        for s, t, s_site in used):

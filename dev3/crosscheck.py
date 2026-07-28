@@ -63,23 +63,21 @@ def run(data_dir="."):
         for bs, be, st, bd in bk[pid]:
             if bs < end and start < be:
                 return False
+            if bd != day:
+                continue        # only same-day items count as neighbours
             if be <= start and (prev_i is None or be > prev_i[0]):
                 prev_i = (be, st)
             if bs >= end and (next_i is None or bs < next_i[0]):
                 next_i = (bs, st)
-        # Travel in from the home site to the first engagement of the day, and
-        # home again from the last.
+        # Travel in from the home site to the first engagement of the day. The
+        # journey home afterwards is on their own time, so no end-of-day check.
         ws_ = utc(pid, day, hhmm(p["work_start_local"]))
-        we_ = utc(pid, day, hhmm(p["work_end_local"]))
         if prev_i is None:
             if start - ws_ < trav(home, site):
                 return False
         elif start - prev_i[0] < trav(prev_i[1], site):
             return False
-        if next_i is None:
-            if we_ - end < trav(site, home):
-                return False
-        elif next_i[0] - end < trav(site, next_i[1]):
+        if next_i is not None and next_i[0] - end < trav(site, next_i[1]):
             return False
         return True
 
