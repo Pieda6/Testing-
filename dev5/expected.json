@@ -2,18 +2,18 @@
  "answers": [
   {
    "id": "G-001",
+   "feasible": true,
+   "total_weight": 516
+  },
+  {
+   "id": "G-002",
    "feasible": false,
    "total_weight": 0
   },
   {
-   "id": "G-002",
-   "feasible": true,
-   "total_weight": -32
-  },
-  {
    "id": "G-003",
    "feasible": true,
-   "total_weight": 239
+   "total_weight": 307
   },
   {
    "id": "G-004",
@@ -22,43 +22,43 @@
   },
   {
    "id": "G-005",
-   "feasible": true,
-   "total_weight": -184
+   "feasible": false,
+   "total_weight": 0
   },
   {
    "id": "G-006",
    "feasible": true,
-   "total_weight": 316
+   "total_weight": 494
   },
   {
    "id": "G-007",
-   "feasible": false,
-   "total_weight": 0
+   "feasible": true,
+   "total_weight": 416
   },
   {
    "id": "G-008",
-   "feasible": true,
-   "total_weight": -303
+   "feasible": false,
+   "total_weight": 0
   },
   {
    "id": "G-009",
-   "feasible": false,
-   "total_weight": 0
+   "feasible": true,
+   "total_weight": 316
   },
   {
    "id": "G-010",
+   "feasible": true,
+   "total_weight": 284
+  },
+  {
+   "id": "G-011",
    "feasible": false,
    "total_weight": 0
   },
   {
-   "id": "G-011",
-   "feasible": true,
-   "total_weight": 329
-  },
-  {
    "id": "G-012",
-   "feasible": true,
-   "total_weight": 310
+   "feasible": false,
+   "total_weight": 0
   },
   {
    "id": "G-013",
@@ -72,183 +72,183 @@
   },
   {
    "id": "G-015",
-   "feasible": false,
-   "total_weight": 0
+   "feasible": true,
+   "total_weight": 353
   },
   {
    "id": "G-016",
    "feasible": true,
-   "total_weight": -194
+   "total_weight": 731
   },
   {
    "id": "G-017",
-   "feasible": true,
-   "total_weight": 49
+   "feasible": false,
+   "total_weight": 0
   },
   {
    "id": "G-018",
    "feasible": true,
-   "total_weight": 340
+   "total_weight": 594
   },
   {
    "id": "G-019",
-   "feasible": false,
-   "total_weight": 0
+   "feasible": true,
+   "total_weight": 459
   },
   {
    "id": "G-020",
    "feasible": true,
-   "total_weight": -292
+   "total_weight": 561
   },
   {
    "id": "G-021",
    "feasible": true,
-   "total_weight": -267
+   "total_weight": 724
   },
   {
    "id": "G-022",
-   "feasible": true,
-   "total_weight": -82
-  },
-  {
-   "id": "G-023",
-   "feasible": true,
-   "total_weight": -190
-  },
-  {
-   "id": "G-024",
-   "feasible": true,
-   "total_weight": 447
-  },
-  {
-   "id": "G-025",
-   "feasible": true,
-   "total_weight": -67
-  },
-  {
-   "id": "G-026",
-   "feasible": true,
-   "total_weight": -164
-  },
-  {
-   "id": "G-027",
-   "feasible": true,
-   "total_weight": -281
-  },
-  {
-   "id": "G-028",
    "feasible": false,
    "total_weight": 0
   },
   {
+   "id": "G-023",
+   "feasible": true,
+   "total_weight": 381
+  },
+  {
+   "id": "G-024",
+   "feasible": true,
+   "total_weight": 277
+  },
+  {
+   "id": "G-025",
+   "feasible": true,
+   "total_weight": 481
+  },
+  {
+   "id": "G-026",
+   "feasible": true,
+   "total_weight": 358
+  },
+  {
+   "id": "G-027",
+   "feasible": false,
+   "total_weight": 0
+  },
+  {
+   "id": "G-028",
+   "feasible": true,
+   "total_weight": 244
+  },
+  {
    "id": "G-029",
    "feasible": true,
-   "total_weight": 316
+   "total_weight": 308
   },
   {
    "id": "G-030",
    "feasible": true,
-   "total_weight": 330
+   "total_weight": 272
   },
   {
    "id": "G-031",
-   "feasible": true,
-   "total_weight": -188
+   "feasible": false,
+   "total_weight": 0
   },
   {
    "id": "G-032",
    "feasible": true,
-   "total_weight": 375
+   "total_weight": 495
   },
   {
    "id": "G-033",
    "feasible": true,
-   "total_weight": 396
+   "total_weight": 324
   },
   {
    "id": "G-034",
    "feasible": true,
-   "total_weight": -102
+   "total_weight": 301
   },
   {
    "id": "G-035",
    "feasible": true,
-   "total_weight": -297
+   "total_weight": 482
   },
   {
    "id": "G-036",
    "feasible": true,
-   "total_weight": -46
+   "total_weight": 359
   },
   {
    "id": "G-037",
    "feasible": true,
-   "total_weight": -126
+   "total_weight": 410
   },
   {
    "id": "G-038",
    "feasible": true,
-   "total_weight": -196
+   "total_weight": 537
   },
   {
    "id": "G-039",
    "feasible": true,
-   "total_weight": 347
+   "total_weight": 372
   },
   {
    "id": "G-040",
    "feasible": true,
-   "total_weight": 312
+   "total_weight": 268
   },
   {
    "id": "G-041",
    "feasible": true,
-   "total_weight": -171
+   "total_weight": 385
   },
   {
    "id": "G-042",
    "feasible": true,
-   "total_weight": -37
+   "total_weight": 448
   },
   {
    "id": "G-043",
    "feasible": true,
-   "total_weight": 258
+   "total_weight": 441
   },
   {
    "id": "G-044",
    "feasible": true,
-   "total_weight": 204
+   "total_weight": 377
   },
   {
    "id": "G-045",
    "feasible": true,
-   "total_weight": 410
+   "total_weight": 232
   },
   {
    "id": "G-046",
    "feasible": true,
-   "total_weight": 328
+   "total_weight": 414
   },
   {
    "id": "G-047",
    "feasible": true,
-   "total_weight": 380
+   "total_weight": 487
   },
   {
    "id": "G-048",
    "feasible": true,
-   "total_weight": -59
+   "total_weight": 189
   },
   {
    "id": "G-049",
    "feasible": true,
-   "total_weight": 323
+   "total_weight": 228
   },
   {
    "id": "G-050",
    "feasible": true,
-   "total_weight": -251
+   "total_weight": 244
   }
  ]
 }

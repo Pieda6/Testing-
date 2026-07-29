@@ -22,7 +22,7 @@ which part of the algorithm they exercise, then selected to fill coverage quotas
                      an in-degree check calls feasible
   selfloop_min       some vertex's cheapest incoming edge is a self-loop
   into_root          an edge into the root is cheaper than every edge used
-  negative / zero    the optimum uses a negative-weight / zero-weight edge
+  zero               the optimum uses a zero-weight edge
 
 Emits instances.json only. The generator never computes the shipped answer key;
 that comes from the reference solver and is then re-derived by the independent
@@ -42,7 +42,7 @@ _spec = importlib.util.spec_from_file_location(
 S = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(S)
 
-SEED = b"dynamo/arborescence-battery/v4"
+SEED = b"dynamo/arborescence-battery/v5"
 N_INSTANCES = 50
 POOL = 1500
 N_LO, N_HI = 30, 38
@@ -56,7 +56,6 @@ QUOTAS = [
     ("acyclic", 4),
     ("selfloop_min", 2),
     ("into_root", 2),
-    ("negative", 2),
 ]
 
 
@@ -71,12 +70,15 @@ def build_candidate(idx):
     flav = det_int("f%d" % idx) % 16
     self_loops = bool(flav & 1)
     into_root = bool(flav & 2)
-    negatives = bool(flav & 4)
+    wide = bool(flav & 4)          # wider weight spread
     cut = bool(flav & 8)
     missing = (det_int("ms%d" % idx) % 7) == 0
 
-    lo = -18 if negatives else 0
-    hi = 60
+    # Non-negative throughout: the LP dual the answer must carry requires
+    # non-negative costs, so shipping negative weights would make the
+    # certificate ill-posed rather than merely harder.
+    lo = 0
+    hi = 90 if wide else 60
     edges = []
 
     def add(u, v, w):
@@ -128,11 +130,11 @@ def build_candidate(idx):
     if self_loops:
         for k in range(1 + det_int("sn%d" % idx) % 3):
             v = det_int("sv%d_%d" % (idx, k)) % n
-            add(v, v, lo - 5 + det_int("slw%d_%d" % (idx, k)) % 10)
+            add(v, v, det_int("slw%d_%d" % (idx, k)) % 5)
     if into_root:
         u = det_int("iu%d" % idx) % n
         if u != root:
-            add(u, root, lo - 9 + det_int("iw%d" % idx) % 6)
+            add(u, root, det_int("iw%d" % idx) % 4)
 
     return {"n": n, "root": root, "edges": edges}
 
@@ -153,8 +155,6 @@ def classify(cand, res, depth):
     tags.add({0: "acyclic", 1: "depth1", 2: "depth2"}.get(depth, "depth3"))
     by_id = {e["id"]: e for e in cand["edges"]}
     weights = [by_id[i]["w"] for i in res[1]]
-    if any(w < 0 for w in weights):
-        tags.add("negative")
     if any(w == 0 for w in weights):
         tags.add("zero")
     for e in cand["edges"]:

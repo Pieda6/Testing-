@@ -1,9 +1,9 @@
 """Control battery for dynamo/arborescence-battery.
 
 Runs the REAL verifier (task5/tests/test_outputs.py under pytest) against the
-oracle and against a set of implementations that are wrong in the specific ways
-a competent-but-hasty implementation of Edmonds' goes wrong. Every number quoted
-in task.toml comes from here.
+oracle and against submissions that are wrong in the ways a real attempt goes
+wrong -- including the library route, which is the reason the task asks for a
+proof rather than just an answer.
 
 The oracle is checked first. If it does not score 1.0 the harness is broken and
 nothing else it prints means anything.
@@ -18,227 +18,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 TESTS = os.path.join(HERE, "..", "task5", "tests")
 OUT = "/app/answer.json"
 
-
-# --------------------------------------------------------------------------
-# A parameterised solver. Each flag turns a correct step into a plausible bug.
-# --------------------------------------------------------------------------
-def arb(n, edges, root, drop_selfloops=True, drop_into_root=True,
-        reweight=True, max_depth=None, expand_correct=True, depth=0):
-    best = [None] * n
-    for e in edges:
-        u, v, w, eid = e
-        if drop_into_root and v == root:
-            continue
-        if drop_selfloops and u == v:
-            continue
-        if v == root and not drop_into_root and u == root:
-            continue
-        cur = best[v]
-        if cur is None or w < cur[2] or (w == cur[2] and eid < cur[3]):
-            best[v] = e
-    for v in range(n):
-        if v != root and best[v] is None:
-            return None
-
-    state = [0] * n
-    cycle = None
-    for s in range(n):
-        if state[s] or s == root:
-            continue
-        walk = []
-        v = s
-        while v != root and state[v] == 0:
-            state[v] = 1
-            walk.append(v)
-            v = best[v][0]
-        if v != root and state[v] == 1:
-            cycle = []
-            x = v
-            while True:
-                cycle.append(x)
-                x = best[x][0]
-                if x == v:
-                    break
-        for x in walk:
-            state[x] = 2
-        if cycle:
-            break
-
-    def greedy():
-        return (sum(best[v][2] for v in range(n) if v != root),
-                sorted(best[v][3] for v in range(n) if v != root))
-
-    if cycle is None:
-        return greedy()
-    if max_depth is not None and depth >= max_depth:
-        return greedy()                       # stops contracting too early
-
-    on_cycle = set(cycle)
-    cycle_weight = sum(best[v][2] for v in cycle)
-    mapped, nxt = {}, 0
-    for v in range(n):
-        if v not in on_cycle:
-            mapped[v] = nxt
-            nxt += 1
-    super_v = nxt
-    nxt += 1
-    for v in on_cycle:
-        mapped[v] = super_v
-
-    reduced = []
-    for u, v, w, eid in edges:
-        mu, mv = mapped[u], mapped[v]
-        if mu == mv:
-            continue
-        if v in on_cycle and reweight:
-            reduced.append((mu, mv, w - best[v][2], eid))
-        else:
-            reduced.append((mu, mv, w, eid))
-
-    sub = arb(nxt, reduced, mapped[root], drop_selfloops, drop_into_root,
-              reweight, max_depth, expand_correct, depth + 1)
-    if sub is None:
-        return None
-    sub_weight, sub_eids = sub
-
-    by_id = {e[3]: e for e in edges}
-    entered = None
-    for eid in sub_eids:
-        u, v, _w, _ = by_id[eid]
-        if v in on_cycle and u not in on_cycle:
-            entered = v
-            break
-    if not expand_correct:
-        entered = cycle[0]                    # drops the wrong cycle edge
-
-    chosen = set(sub_eids)
-    for v in cycle:
-        if v != entered:
-            chosen.add(best[v][3])
-    return sub_weight + cycle_weight, sorted(chosen)
+import importlib.util  # noqa: E402
+_spec = importlib.util.spec_from_file_location(
+    "solve", os.path.join(HERE, "..", "task5", "solution", "solve.py"))
+S = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(S)
 
 
-def run_solver(instances, fn):
-    out = []
-    for inst in instances:
-        tup = [(e["u"], e["v"], e["w"], e["id"]) for e in inst["edges"]]
-        got = fn(inst, tup)
-        if got is None:
-            out.append({"id": inst["id"], "feasible": False,
-                        "total_weight": 0, "edges": []})
-        else:
-            out.append({"id": inst["id"], "feasible": True,
-                        "total_weight": got[0], "edges": got[1]})
-    return out
-
-
-def variant(**kw):
-    return lambda inst, tup: arb(inst["n"], tup, inst["root"], **kw)
-
-
-def greedy_min_in(inst, tup):
-    """The naive 'directed MST': cheapest incoming edge per vertex, no more."""
-    n, root = inst["n"], inst["root"]
-    best = {}
-    for u, v, w, eid in tup:
-        if v == root or u == v:
-            continue
-        if v not in best or w < best[v][2]:
-            best[v] = (u, v, w, eid)
-    if any(v not in best for v in range(n) if v != root):
-        return None
-    return (sum(e[2] for e in best.values()),
-            sorted(e[3] for e in best.values()))
-
-
-def greedy_selfloops(inst, tup):
-    """Naive greedy that forgets a self-loop can never be an in-edge."""
-    n, root = inst["n"], inst["root"]
-    best = {}
-    for u, v, w, eid in tup:
-        if v == root:
-            continue
-        if v not in best or w < best[v][2]:
-            best[v] = (u, v, w, eid)
-    if any(v not in best for v in range(n) if v != root):
-        return None
-    return (sum(e[2] for e in best.values()),
-            sorted(e[3] for e in best.values()))
-
-
-def greedy_into_root(inst, tup):
-    """Naive greedy that also gives the root an incoming edge."""
-    n, root = inst["n"], inst["root"]
-    best = {}
-    for u, v, w, eid in tup:
-        if u == v:
-            continue
-        if v not in best or w < best[v][2]:
-            best[v] = (u, v, w, eid)
-    if any(v not in best for v in range(n) if v != root):
-        return None
-    return (sum(e[2] for e in best.values()),
-            sorted(e[3] for e in best.values()))
-
-
-def indegree_feasible(inst, tup):
-    """Reports feasible whenever every vertex has an incoming edge."""
-    got = arb(inst["n"], tup, inst["root"])
-    if got is not None:
-        return got
-    n, root = inst["n"], inst["root"]
-    have = {v for u, v, _w, _e in tup if v != root and u != v}
-    if all(v in have for v in range(n) if v != root):
-        return greedy_min_in(inst, tup)
-    return None
-
-
-def nonneg_only(inst, tup):
-    """Assumes weights are non-negative and discards the rest."""
-    return arb(inst["n"], [e for e in tup if e[2] >= 0], inst["root"])
-
-
-def undirected_mst(inst, tup):
-    """Ignores direction and returns a minimum spanning tree."""
-    n, root = inst["n"], inst["root"]
-    parent = list(range(n))
-
-    def find(x):
-        while parent[x] != x:
-            parent[x] = parent[parent[x]]
-            x = parent[x]
-        return x
-
-    chosen, total = [], 0
-    for u, v, w, eid in sorted(tup, key=lambda e: (e[2], e[3])):
-        if u == v:
-            continue
-        a, b = find(u), find(v)
-        if a == b:
-            continue
-        parent[a] = b
-        chosen.append(eid)
-        total += w
-    if len(chosen) != n - 1:
-        return None
-    return total, sorted(chosen)
-
-
-WRONG = [
-    ("naive cheapest in-edge, no contraction", greedy_min_in),
-    ("contracts only one level", variant(max_depth=1)),
-    ("contracts only two levels", variant(max_depth=2)),
-    ("no reduced weights on contraction", variant(reweight=False)),
-    ("expansion drops the wrong cycle edge", variant(expand_correct=False)),
-    ("naive greedy, self-loops not excluded", greedy_selfloops),
-    ("naive greedy, root given an in-edge", greedy_into_root),
-    ("feasible whenever every vertex has an in-edge", indegree_feasible),
-    ("assumes non-negative weights", nonneg_only),
-    ("undirected MST instead", undirected_mst),
-]
-
-
-# --------------------------------------------------------------------------
 def reward(rows, symlink=False, missing=False):
     os.makedirs("/app", exist_ok=True)
     for p in (OUT, OUT + ".real"):
@@ -260,69 +46,129 @@ def reward(rows, symlink=False, missing=False):
     return 1 if r.returncode == 0 else 0
 
 
+# ------------------------------------------------------- the library route --
+def networkx_answers(instances, dual="empty"):
+    """What `pip install networkx` buys, with various attempts at the proof."""
+    import networkx as nx
+    out = []
+    for inst in instances:
+        G = nx.MultiDiGraph()
+        G.add_nodes_from(range(inst["n"]))
+        for e in inst["edges"]:
+            if e["u"] == e["v"] or e["v"] == inst["root"]:
+                continue
+            G.add_edge(e["u"], e["v"], key=e["id"], weight=e["w"])
+        edges_t = [(e["u"], e["v"], e["w"], e["id"]) for e in inst["edges"]]
+        try:
+            A = nx.minimum_spanning_arborescence(G, preserve_attrs=True)
+            # networkx re-keys the result, so ids are recovered by matching
+            # (tail, head, weight) back to the input -- the edge-id plumbing the
+            # library route still has to do for itself.
+            pool = {}
+            for e in inst["edges"]:
+                pool.setdefault((e["u"], e["v"], e["w"]), []).append(e["id"])
+            ids = []
+            for u, v, d in A.edges(data=True):
+                ids.append(pool[(u, v, d["weight"])].pop())
+            ids.sort()
+            w = int(sum(d["weight"] for _u, _v, d in A.edges(data=True)))
+            row = {"id": inst["id"], "feasible": True, "total_weight": w,
+                   "edges": ids, "dual": [], "cut": []}
+            if dual == "real":
+                d = S.dual_solution(inst["n"], inst["root"], edges_t)
+                row["dual"] = [[s, y] for s, y in d]
+        except Exception:
+            row = {"id": inst["id"], "feasible": False, "total_weight": 0,
+                   "edges": [], "dual": [],
+                   "cut": S.unreachable_cut(inst["n"], edges_t, inst["root"])}
+        out.append(row)
+    return out
+
+
 def main():
     instances = json.load(open(os.path.join(HERE, "instances.json")))["instances"]
     exp = json.load(open(os.path.join(HERE, "witness.json")))["answers"]
+    by_iid = {i["id"]: i for i in instances}
 
-    print("%-46s %6s  %s" % ("CONTROL", "REWARD", "instances correct"))
+    print("%-52s %s" % ("CONTROL", "REWARD"))
     if reward(exp) != 1:
         print("ORACLE FAILED -- every number below would be meaningless")
         return 1
-    print("%-46s %6d  %d/%d" % ("oracle", 1, len(exp), len(exp)))
+    print("%-52s %d" % ("oracle (arborescence + dual + cut)", 1))
 
     ok = True
-    for name, fn in WRONG:
-        rows = run_solver(instances, fn)
-        r = reward(rows)
-        same = sum(1 for a, b in zip(rows, exp) if a == b)
-        if r != 0:
+
+    def show(name, rows, want=0, **kw):
+        nonlocal ok
+        r = reward(rows, **kw)
+        if r != want:
             ok = False
-            name += "   <-- SHOULD BE 0"
-        print("%-46s %6d  %d/%d" % (name, r, same, len(exp)))
+            name += "   <-- SHOULD BE %d" % want
+        print("%-52s %d" % (name, r))
 
-    print()
-    # Keep the claimed weight but hand in a different edge set: the certificate
-    # check has to re-examine the graph to catch this.
-    by_iid = {i["id"]: i for i in instances}
-    swapped = [dict(a) for a in exp]
-    for a in swapped:
-        if not a["feasible"]:
-            continue
-        inst = by_iid[a["id"]]
-        used = set(a["edges"])
-        spare = [e["id"] for e in inst["edges"] if e["id"] not in used]
-        if not spare:
-            continue
-        a["edges"] = sorted(used - {max(used)} | {spare[0]})
-        break
+    # --- the library shortcut -------------------------------------------------
+    show("networkx optimum, dual left empty", networkx_answers(instances))
+    nx_nodual = [{k: v for k, v in a.items() if k != "dual"}
+                 for a in networkx_answers(instances)]
+    show("networkx optimum, dual field omitted", nx_nodual)
+    show("networkx optimum WITH a real dual",
+         networkx_answers(instances, dual="real"), want=1)
 
-    near = [dict(a) for a in exp]
-    for a in near:
+    # --- broken proofs on a correct answer ------------------------------------
+    def tweak(fn):
+        rows = [json.loads(json.dumps(a)) for a in exp]
+        for a in rows:
+            if a["feasible"] and a["dual"]:
+                fn(a)
+                break
+        return rows
+
+    show("dual with one value inflated",
+         tweak(lambda a: a["dual"][0].__setitem__(1, a["dual"][0][1] + 1)))
+    show("dual with one entry dropped",
+         tweak(lambda a: a["dual"].pop(0)))
+    show("dual with a value negated",
+         tweak(lambda a: a["dual"][0].__setitem__(1, -a["dual"][0][1])))
+    show("dual set containing the root", tweak(
+        lambda a: a["dual"][0].__setitem__(
+            0, sorted(set(a["dual"][0][0]) | {by_iid[a["id"]]["root"]}))))
+
+    # --- broken cut certificates ---------------------------------------------
+    def tweak_cut(fn):
+        rows = [json.loads(json.dumps(a)) for a in exp]
+        for a in rows:
+            if not a["feasible"]:
+                fn(a, by_iid[a["id"]])
+                break
+        return rows
+
+    show("infeasible reported with an empty cut",
+         tweak_cut(lambda a, i: a.__setitem__("cut", [])))
+    show("cut widened until an edge enters it", tweak_cut(
+        lambda a, i: a.__setitem__(
+            "cut", sorted(set(a["cut"]) | {v for v in range(i["n"])
+                                           if v != i["root"]} - {i["root"]}))))
+
+    # --- schema and near misses ----------------------------------------------
+    off = [json.loads(json.dumps(a)) for a in exp]
+    for a in off:
         if a["feasible"]:
             a["total_weight"] += 1
             break
-    variants = [
-        ("one instance off by one", near),
-        ("array reversed", list(reversed([dict(a) for a in exp]))),
-        ("one entry dropped", [dict(a) for a in exp[:-1]]),
-        ("edge lists reversed",
-         [dict(a, edges=list(reversed(a["edges"]))) for a in exp]),
-        ("everything reported infeasible",
-         [{"id": a["id"], "feasible": False, "total_weight": 0, "edges": []}
-          for a in exp]),
-        ("feasible sent as 0/1 instead of boolean",
-         [dict(a, feasible=1 if a["feasible"] else 0) for a in exp]),
-        ("an edge swapped for another real edge", swapped),
-    ]
-    for name, rows in variants:
-        r = reward(rows)
-        if r != 0:
-            ok = False
-            name += "   <-- SHOULD BE 0"
-        print("%-46s %6d" % (name, r))
-    print("%-46s %6d" % ("symlinked output path", reward(exp, symlink=True)))
-    print("%-46s %6d" % ("nop (no file written)", reward([], missing=True)))
-    print("%-46s %6d" % ("oracle again (stability)", reward(exp)))
+    show("one instance off by one", off)
+    show("array reversed", list(reversed([dict(a) for a in exp])))
+    show("one entry dropped", [dict(a) for a in exp[:-1]])
+    show("edge lists reversed",
+         [dict(a, edges=list(reversed(a["edges"]))) for a in exp])
+    show("everything reported infeasible",
+         [{"id": a["id"], "feasible": False, "total_weight": 0, "edges": [],
+           "dual": [], "cut": [1]} for a in exp])
+    show("feasible sent as 0/1 instead of boolean",
+         [dict(a, feasible=1 if a["feasible"] else 0) for a in exp])
+    show("symlinked output path", exp, symlink=True)
+    show("nop (no file written)", [], missing=True)
+    show("oracle again (stability)", exp, want=1)
+
     shutil.rmtree("/app", ignore_errors=True)
     return 0 if ok else 1
 
