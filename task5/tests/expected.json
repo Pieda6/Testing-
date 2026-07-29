@@ -1,254 +1,54 @@
 {
- "answers": [
-  {
-   "id": "G-001",
-   "feasible": false,
-   "total_weight": 0
-  },
-  {
-   "id": "G-002",
-   "feasible": true,
-   "total_weight": -32
-  },
-  {
-   "id": "G-003",
-   "feasible": true,
-   "total_weight": 239
-  },
-  {
-   "id": "G-004",
-   "feasible": false,
-   "total_weight": 0
-  },
-  {
-   "id": "G-005",
-   "feasible": true,
-   "total_weight": -184
-  },
-  {
-   "id": "G-006",
-   "feasible": true,
-   "total_weight": 316
-  },
-  {
-   "id": "G-007",
-   "feasible": false,
-   "total_weight": 0
-  },
-  {
-   "id": "G-008",
-   "feasible": true,
-   "total_weight": -303
-  },
-  {
-   "id": "G-009",
-   "feasible": false,
-   "total_weight": 0
-  },
-  {
-   "id": "G-010",
-   "feasible": false,
-   "total_weight": 0
-  },
-  {
-   "id": "G-011",
-   "feasible": true,
-   "total_weight": 329
-  },
-  {
-   "id": "G-012",
-   "feasible": true,
-   "total_weight": 310
-  },
-  {
-   "id": "G-013",
-   "feasible": false,
-   "total_weight": 0
-  },
-  {
-   "id": "G-014",
-   "feasible": false,
-   "total_weight": 0
-  },
-  {
-   "id": "G-015",
-   "feasible": false,
-   "total_weight": 0
-  },
-  {
-   "id": "G-016",
-   "feasible": true,
-   "total_weight": -194
-  },
-  {
-   "id": "G-017",
-   "feasible": true,
-   "total_weight": 49
-  },
-  {
-   "id": "G-018",
-   "feasible": true,
-   "total_weight": 340
-  },
-  {
-   "id": "G-019",
-   "feasible": false,
-   "total_weight": 0
-  },
-  {
-   "id": "G-020",
-   "feasible": true,
-   "total_weight": -292
-  },
-  {
-   "id": "G-021",
-   "feasible": true,
-   "total_weight": -267
-  },
-  {
-   "id": "G-022",
-   "feasible": true,
-   "total_weight": -82
-  },
-  {
-   "id": "G-023",
-   "feasible": true,
-   "total_weight": -190
-  },
-  {
-   "id": "G-024",
-   "feasible": true,
-   "total_weight": 447
-  },
-  {
-   "id": "G-025",
-   "feasible": true,
-   "total_weight": -67
-  },
-  {
-   "id": "G-026",
-   "feasible": true,
-   "total_weight": -164
-  },
-  {
-   "id": "G-027",
-   "feasible": true,
-   "total_weight": -281
-  },
-  {
-   "id": "G-028",
-   "feasible": false,
-   "total_weight": 0
-  },
-  {
-   "id": "G-029",
-   "feasible": true,
-   "total_weight": 316
-  },
-  {
-   "id": "G-030",
-   "feasible": true,
-   "total_weight": 330
-  },
-  {
-   "id": "G-031",
-   "feasible": true,
-   "total_weight": -188
-  },
-  {
-   "id": "G-032",
-   "feasible": true,
-   "total_weight": 375
-  },
-  {
-   "id": "G-033",
-   "feasible": true,
-   "total_weight": 396
-  },
-  {
-   "id": "G-034",
-   "feasible": true,
-   "total_weight": -102
-  },
-  {
-   "id": "G-035",
-   "feasible": true,
-   "total_weight": -297
-  },
-  {
-   "id": "G-036",
-   "feasible": true,
-   "total_weight": -46
-  },
-  {
-   "id": "G-037",
-   "feasible": true,
-   "total_weight": -126
-  },
-  {
-   "id": "G-038",
-   "feasible": true,
-   "total_weight": -196
-  },
-  {
-   "id": "G-039",
-   "feasible": true,
-   "total_weight": 347
-  },
-  {
-   "id": "G-040",
-   "feasible": true,
-   "total_weight": 312
-  },
-  {
-   "id": "G-041",
-   "feasible": true,
-   "total_weight": -171
-  },
-  {
-   "id": "G-042",
-   "feasible": true,
-   "total_weight": -37
-  },
-  {
-   "id": "G-043",
-   "feasible": true,
-   "total_weight": 258
-  },
-  {
-   "id": "G-044",
-   "feasible": true,
-   "total_weight": 204
-  },
-  {
-   "id": "G-045",
-   "feasible": true,
-   "total_weight": 410
-  },
-  {
-   "id": "G-046",
-   "feasible": true,
-   "total_weight": 328
-  },
-  {
-   "id": "G-047",
-   "feasible": true,
-   "total_weight": 380
-  },
-  {
-   "id": "G-048",
-   "feasible": true,
-   "total_weight": -59
-  },
-  {
-   "id": "G-049",
-   "feasible": true,
-   "total_weight": 323
-  },
-  {
-   "id": "G-050",
-   "feasible": true,
-   "total_weight": -251
-  }
- ]
+"answers":[
+{"id":"G-001","feasible":false,"total_weight":0},
+{"id":"G-002","feasible":true,"total_weight":-32},
+{"id":"G-003","feasible":true,"total_weight":239},
+{"id":"G-004","feasible":false,"total_weight":0},
+{"id":"G-005","feasible":true,"total_weight":-184},
+{"id":"G-006","feasible":true,"total_weight":316},
+{"id":"G-007","feasible":false,"total_weight":0},
+{"id":"G-008","feasible":true,"total_weight":-303},
+{"id":"G-009","feasible":false,"total_weight":0},
+{"id":"G-010","feasible":false,"total_weight":0},
+{"id":"G-011","feasible":true,"total_weight":329},
+{"id":"G-012","feasible":true,"total_weight":310},
+{"id":"G-013","feasible":false,"total_weight":0},
+{"id":"G-014","feasible":false,"total_weight":0},
+{"id":"G-015","feasible":false,"total_weight":0},
+{"id":"G-016","feasible":true,"total_weight":-194},
+{"id":"G-017","feasible":true,"total_weight":49},
+{"id":"G-018","feasible":true,"total_weight":340},
+{"id":"G-019","feasible":false,"total_weight":0},
+{"id":"G-020","feasible":true,"total_weight":-292},
+{"id":"G-021","feasible":true,"total_weight":-267},
+{"id":"G-022","feasible":true,"total_weight":-82},
+{"id":"G-023","feasible":true,"total_weight":-190},
+{"id":"G-024","feasible":true,"total_weight":447},
+{"id":"G-025","feasible":true,"total_weight":-67},
+{"id":"G-026","feasible":true,"total_weight":-164},
+{"id":"G-027","feasible":true,"total_weight":-281},
+{"id":"G-028","feasible":false,"total_weight":0},
+{"id":"G-029","feasible":true,"total_weight":316},
+{"id":"G-030","feasible":true,"total_weight":330},
+{"id":"G-031","feasible":true,"total_weight":-188},
+{"id":"G-032","feasible":true,"total_weight":375},
+{"id":"G-033","feasible":true,"total_weight":396},
+{"id":"G-034","feasible":true,"total_weight":-102},
+{"id":"G-035","feasible":true,"total_weight":-297},
+{"id":"G-036","feasible":true,"total_weight":-46},
+{"id":"G-037","feasible":true,"total_weight":-126},
+{"id":"G-038","feasible":true,"total_weight":-196},
+{"id":"G-039","feasible":true,"total_weight":347},
+{"id":"G-040","feasible":true,"total_weight":312},
+{"id":"G-041","feasible":true,"total_weight":-171},
+{"id":"G-042","feasible":true,"total_weight":-37},
+{"id":"G-043","feasible":true,"total_weight":258},
+{"id":"G-044","feasible":true,"total_weight":204},
+{"id":"G-045","feasible":true,"total_weight":410},
+{"id":"G-046","feasible":true,"total_weight":328},
+{"id":"G-047","feasible":true,"total_weight":380},
+{"id":"G-048","feasible":true,"total_weight":-59},
+{"id":"G-049","feasible":true,"total_weight":323},
+{"id":"G-050","feasible":true,"total_weight":-251}
+]
 }
