@@ -35,6 +35,10 @@ and whose total weight — the sum of `w` over the edges in `A` — is as small 
 possible. Note that these two conditions together mean `root` is the head of no
 edge in `A`, and that no edge of `A` has the same head and tail.
 
+Report the minimum total weight from **every** root `0` through `n-1` as well,
+using `null` for any root from which no spanning arborescence exists. Only the
+designated root needs a proof.
+
 An answer on its own is not enough. Each instance must come with a proof, and
 the proof is what is checked.
 
@@ -58,14 +62,6 @@ Give a non-empty set of vertices, none of them the root, with **no edge of the
 graph entering it** — no edge whose head is inside the set and whose tail is
 outside. Nothing can ever reach those vertices from the root, so no spanning
 arborescence exists. Supply it in the `cut` field.
-
-## Also: the best root
-
-For each instance, report the optimal total weight from **every** possible root
-`0` through `n-1`, not just the designated one. Where a root admits no spanning
-arborescence at all, report `null` for it. Most roots do not: across this battery
-roughly three roots in ten leave some vertex unreachable, so each one has to be
-decided rather than assumed. No proof is required for these — the weights alone.
 
 ## Output
 
@@ -96,11 +92,9 @@ When it is `false`: `total_weight` is `0`, `edges` and `dual` are empty, and
 `cut` holds the vertices of the empty-entering-set described above, sorted
 ascending.
 
-`root_weights` is present either way: an array of exactly `n` entries, one per
-root in order, each the optimal total weight from that root as an integer or
-`null` if that root admits no spanning arborescence. Note that
-`root_weights[root]` is the same number as `total_weight` when the instance is
-feasible.
+`root_weights` is present either way: exactly `n` entries, one per root in
+order, each an integer or `null`. When the instance is feasible,
+`root_weights[root]` equals `total_weight`.
 
 Instances with no arborescence are represented this way throughout and count
 once each, exactly like the rest. Write no other files.

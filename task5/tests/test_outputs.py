@@ -198,9 +198,7 @@ def _dual_fault(inst, dual, claimed):
 
 
 def _cut_fault(inst, cut):
-    """None if `cut` proves no spanning arborescence exists.
-
-"""
+    """None if `cut` proves no spanning arborescence exists."""
     n, root = inst["n"], inst["root"]
     if not cut:
         return "an instance with no arborescence needs a non-empty cut"
