@@ -59,6 +59,14 @@ graph entering it** — no edge whose head is inside the set and whose tail is
 outside. Nothing can ever reach those vertices from the root, so no spanning
 arborescence exists. Supply it in the `cut` field.
 
+## Also: the best root
+
+For each instance, report the optimal total weight from **every** possible root
+`0` through `n-1`, not just the designated one. Where a root admits no spanning
+arborescence at all, report `null` for it. Most roots do not: across this battery
+roughly three roots in ten leave some vertex unreachable, so each one has to be
+decided rather than assumed. No proof is required for these — the weights alone.
+
 ## Output
 
 Write `/app/answer.json`, a JSON object whose `answers` value is an array with
@@ -68,9 +76,11 @@ one entry per instance, **in the same order as `instances.json`**:
       {"id": "G-001", "feasible": true, "total_weight": 37,
        "edges": [0, 2, 5, 9],
        "dual": [[[1, 4, 7], 5], [[4], 12], [[7], 3]],
-       "cut": []},
+       "cut": [],
+       "root_weights": [37, null, 41, 39, null, 44]},
       {"id": "G-002", "feasible": false, "total_weight": 0, "edges": [],
-       "dual": [], "cut": [3, 8, 11]}
+       "dual": [], "cut": [3, 8, 11],
+       "root_weights": [null, 52, null, null, 61, 58]}
     ]}
 
 `feasible` is a JSON boolean — `true` when the instance has a spanning
@@ -85,6 +95,12 @@ and `cut` is empty.
 When it is `false`: `total_weight` is `0`, `edges` and `dual` are empty, and
 `cut` holds the vertices of the empty-entering-set described above, sorted
 ascending.
+
+`root_weights` is present either way: an array of exactly `n` entries, one per
+root in order, each the optimal total weight from that root as an integer or
+`null` if that root admits no spanning arborescence. Note that
+`root_weights[root]` is the same number as `total_weight` when the instance is
+feasible.
 
 Instances with no arborescence are represented this way throughout and count
 once each, exactly like the rest. Write no other files.
@@ -111,4 +127,5 @@ Your submission is correct when both of the following hold:
    spanning arborescence whose weights sum to the reported total, that total is
    the minimum achievable, and the `dual` values satisfy the conditions above
    and sum to it; for an infeasible instance the `cut` is a non-empty set of
-   non-root vertices with no edge entering it. All fifty must be correct.
+   non-root vertices with no edge entering it. `root_weights` is correct for
+   every root of every instance. All fifty must be correct.

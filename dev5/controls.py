@@ -47,7 +47,21 @@ def reward(rows, symlink=False, missing=False):
 
 
 # ------------------------------------------------------- the library route --
-def networkx_answers(instances, dual="empty"):
+def _nx_weight(nx, inst, root):
+    G = nx.MultiDiGraph()
+    G.add_nodes_from(range(inst["n"]))
+    for e in inst["edges"]:
+        if e["u"] == e["v"] or e["v"] == root:
+            continue
+        G.add_edge(e["u"], e["v"], key=e["id"], weight=e["w"])
+    try:
+        A = nx.minimum_spanning_arborescence(G, preserve_attrs=True)
+    except Exception:
+        return None
+    return int(sum(d["weight"] for _u, _v, d in A.edges(data=True)))
+
+
+def networkx_answers(instances, dual="empty", roots=True):
     """What `pip install networkx` buys, with various attempts at the proof."""
     import networkx as nx
     out = []
@@ -81,6 +95,13 @@ def networkx_answers(instances, dual="empty"):
             row = {"id": inst["id"], "feasible": False, "total_weight": 0,
                    "edges": [], "dual": [],
                    "cut": S.unreachable_cut(inst["n"], edges_t, inst["root"])}
+        if roots == "reference":
+            row["root_weights"] = S.root_weights(inst["n"], edges_t)
+        elif roots:
+            row["root_weights"] = [_nx_weight(nx, inst, r)
+                                   for r in range(inst["n"])]
+        else:
+            row["root_weights"] = [None] * inst["n"]
         out.append(row)
     return out
 
@@ -111,8 +132,37 @@ def main():
     nx_nodual = [{k: v for k, v in a.items() if k != "dual"}
                  for a in networkx_answers(instances)]
     show("networkx optimum, dual field omitted", nx_nodual)
-    show("networkx optimum WITH a real dual",
-         networkx_answers(instances, dual="real"), want=1)
+    # networkx gets one root's feasibility wrong (G-039 root 15: it reports no
+    # arborescence where one of weight 428 exists, proved by duality), so the
+    # pure-library route fails on correctness, not just on the missing proof.
+    show("networkx throughout, with a real dual",
+         networkx_answers(instances, dual="real"))
+    # Fairness: networkx's arborescence for the designated root -- a different
+    # optimum from the reference on many instances -- with a real dual and a
+    # correct per-root vector must be accepted.
+    show("networkx arborescence + real dual + correct per-root",
+         networkx_answers(instances, dual="real", roots="reference"), want=1)
+
+    show("networkx optimum, per-root vector left null",
+         networkx_answers(instances, dual="real", roots=False))
+    nx_norw = [{k: v for k, v in a.items() if k != "root_weights"}
+               for a in networkx_answers(instances, dual="real")]
+    show("root_weights field omitted", nx_norw)
+    only_given = [json.loads(json.dumps(a)) for a in exp]
+    for a, i in zip(only_given, instances):
+        a["root_weights"] = [a["root_weights"][r] if r == i["root"] else None
+                             for r in range(i["n"])]
+    show("root_weights only for the designated root", only_given)
+    off_one = [json.loads(json.dumps(a)) for a in exp]
+    for a in off_one:
+        for r, w in enumerate(a["root_weights"]):
+            if w is not None:
+                a["root_weights"][r] = w + 1
+                break
+        else:
+            continue
+        break
+    show("one root weight off by one", off_one)
 
     # --- broken proofs on a correct answer ------------------------------------
     def tweak(fn):
@@ -162,7 +212,8 @@ def main():
          [dict(a, edges=list(reversed(a["edges"]))) for a in exp])
     show("everything reported infeasible",
          [{"id": a["id"], "feasible": False, "total_weight": 0, "edges": [],
-           "dual": [], "cut": [1]} for a in exp])
+           "dual": [], "cut": [1], "root_weights": a["root_weights"]}
+          for a in exp])
     show("feasible sent as 0/1 instead of boolean",
          [dict(a, feasible=1 if a["feasible"] else 0) for a in exp])
     show("symlinked output path", exp, symlink=True)

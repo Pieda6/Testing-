@@ -16,6 +16,11 @@ For an instance with no spanning arborescence, the submission gives a non-empty
 set of non-root vertices with no edge entering it. No arborescence can reach
 those vertices, so that is a proof of infeasibility.
 
+Every entry also reports the optimal weight from each of the n possible roots,
+which is checked against held-out ground truth. Most roots leave the graph with
+no arborescence at all, so this is where per-root feasibility has to be decided
+rather than assumed.
+
 Several optimal arborescences may exist, and several dual solutions may certify
 them; any correct pair is accepted. The held-out optimum in tests/expected.json
 is checked as well, so a submission must be both provably optimal and equal to
@@ -31,7 +36,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 EXPECTED_PATH = os.path.join(HERE, "expected.json")
 INSTANCES_PATH = os.path.join(HERE, "instances.json")
 
-FIELDS = ("id", "feasible", "total_weight", "edges", "dual", "cut")
+FIELDS = ("id", "feasible", "total_weight", "edges", "dual", "cut",
+          "root_weights")
 ID_RE = re.compile(r"\AG-\d{3}\Z")
 MAX_DUAL_ENTRIES = 5000
 
@@ -111,6 +117,12 @@ def _parse(obj, expected):
             assert _is_int(y), (
                 "entry %d: dual item %d value must be an integer" % (i, j))
 
+        rw = r["root_weights"]
+        assert isinstance(rw, list), (
+            "entry %d: root_weights must be an array" % i)
+        assert all(x is None or _is_int(x) for x in rw), (
+            "entry %d: each root_weights entry must be an integer or null" % i)
+
         if r["feasible"]:
             assert r["cut"] == [], (
                 "entry %d: a feasible instance must not carry a cut" % i)
@@ -186,7 +198,9 @@ def _dual_fault(inst, dual, claimed):
 
 
 def _cut_fault(inst, cut):
-    """None if `cut` proves no spanning arborescence exists."""
+    """None if `cut` proves no spanning arborescence exists.
+
+"""
     n, root = inst["n"], inst["root"]
     if not cut:
         return "an instance with no arborescence needs a non-empty cut"
@@ -227,6 +241,20 @@ def test_answers_are_proved():
     wrong = []
     for got, exp in zip(rows, expected):
         inst = instances[exp["id"]]
+        if len(got["root_weights"]) != inst["n"]:
+            wrong.append("%s: root_weights has %d entries, expected one per "
+                         "vertex (%d)"
+                         % (exp["id"], len(got["root_weights"]), inst["n"]))
+            continue
+        if got["root_weights"] != exp["root_weights"]:
+            bad = [r for r in range(inst["n"])
+                   if got["root_weights"][r] != exp["root_weights"][r]]
+            wrong.append("%s: root_weights wrong for %d of %d roots (first: "
+                         "root %d, reported %r, truth %r)"
+                         % (exp["id"], len(bad), inst["n"], bad[0],
+                            got["root_weights"][bad[0]],
+                            exp["root_weights"][bad[0]]))
+            continue
         if got["feasible"] != exp["feasible"]:
             wrong.append("%s: reported feasible=%s, truth is %s"
                          % (exp["id"], got["feasible"], exp["feasible"]))

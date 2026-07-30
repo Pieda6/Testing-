@@ -183,7 +183,14 @@ def main():
             # optimum, and the edge set really is an arborescence of that weight.
             if not k["feasible"] or got[0] != k["total_weight"]:
                 continue
-            if T._primal_fault(i, got[1], got[0]) is None:
+            if T._primal_fault(i, got[1], got[0]) is not None:
+                continue
+            # now also the per-root vector, computed by the same wrong solver
+            rw = []
+            for r in range(i["n"]):
+                g2 = fn(i["n"], r, t)
+                rw.append(None if g2 is None else g2[0])
+            if rw == k["root_weights"]:
                 right += 1
         print("%-46s %d/%d" % (name, right, len(inst)))
 

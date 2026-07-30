@@ -235,17 +235,33 @@ def unreachable_cut(n, edges, root):
 
 
 # ------------------------------------------------------------------ main ----
+def root_weights(n, edges):
+    """Optimal weight from every possible root; None where none exists.
+
+    Most roots make the graph infeasible, so this is where per-root feasibility
+    reasoning gets exercised rather than assumed.
+    """
+    out = []
+    for r in range(n):
+        got = arborescence(n, edges, r)
+        out.append(None if got is None else got[0])
+    return out
+
+
 def solve_instance(inst):
     edges = [(e["u"], e["v"], e["w"], e["id"]) for e in inst["edges"]]
+    per_root = root_weights(inst["n"], edges)
     got = arborescence(inst["n"], edges, inst["root"])
     if got is None:
         return {"id": inst["id"], "feasible": False, "total_weight": 0,
                 "edges": [], "dual": [],
-                "cut": unreachable_cut(inst["n"], edges, inst["root"])}
+                "cut": unreachable_cut(inst["n"], edges, inst["root"]),
+                "root_weights": per_root}
     weight, eids = got
     dual = dual_solution(inst["n"], inst["root"], edges)
     return {"id": inst["id"], "feasible": True, "total_weight": weight,
-            "edges": eids, "dual": [[s, y] for s, y in dual], "cut": []}
+            "edges": eids, "dual": [[s, y] for s, y in dual], "cut": [],
+            "root_weights": per_root}
 
 
 def main():
