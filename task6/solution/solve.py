@@ -10,7 +10,7 @@ intervals during which nothing ran and nothing was recorded. The input gives
 the base offset and the outages. It does NOT give the clock's transitions --
 those have to come out of the log, and then be projected forward.
 
-Two stages, and the second is the one that carries the difficulty.
+Two stages, and it is the first that carries the difficulty.
 
 STAGE 1 -- THE CLOCK.
 Jobs that fire every day read the clock directly: their local firing times are
