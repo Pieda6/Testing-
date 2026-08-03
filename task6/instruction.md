@@ -1,6 +1,6 @@
-`/app/data/jobs.json` is twenty-five months of firing history from a cron-style
-scheduler — thirty jobs — together with everything you need to know about the
-host it ran on. Work out when each job fires next.
+`/app/data/jobs.json` is three years of firing history from a cron-style
+scheduler — twenty-four jobs — together with what is known about the host it ran
+on. Work out when each job fires next.
 
 ## The scheduler
 
@@ -20,19 +20,25 @@ Day-of-week runs Sunday `0` through Saturday `6`.
 ## The clock
 
 The host does not run on UTC. `clock` gives `base_offset_min`, its offset from
-UTC in minutes before any transition, and `transitions`, each an instant `utc`
-at which the offset becomes `offset_min`. Local time is UTC plus the offset in
-force at that instant. The offsets are the host's own; no time zone database
-describes them.
+UTC in minutes at the start of the log. That offset does not stay put — the host
+changes it twice a year — and **the changes are not listed. The log is where you
+find them.**
 
-A transition moves local time, so:
+Each change happens at a whole hour of local time, on a fixed occurrence of a
+fixed weekday in a fixed month: the first, second, third, fourth, fifth or
+**last** such weekday. There is one such rule for each of the two changes, and
+both have been in force, unchanged, for the whole history. The offsets are the
+host's own; no time zone database describes them.
+
+Local time is UTC plus the offset in force at that instant, so a change moves
+local time:
 
 - one that moves the clock **forward** deletes a stretch of local times, and a
   job scheduled inside that stretch does not fire that day at all;
 - one that moves it **backward** repeats a stretch, and a job scheduled inside
   that stretch fires **twice**, at two different UTC instants.
 
-There are transitions inside the log and inside the window you must predict.
+Changes fall inside the log and inside the window you must predict.
 
 ## Outages
 
@@ -44,7 +50,7 @@ about its schedule.
 
 `/app/data/jobs.json` is a JSON object with:
 
-- `clock` — `base_offset_min` and `transitions` as described above
+- `clock` — `base_offset_min`, the offset in force at the start of the log
 - `log_start_utc`, `log_end_utc` — the half-open window the log covers
 - `predict_start_utc`, `predict_end_utc` — the half-open window to predict
 - `outages` — an array of `start_utc` / `end_utc` pairs
@@ -74,8 +80,8 @@ in `[predict_start_utc, predict_end_utc)`, strictly ascending, in the same
 Write `/app/answer.json` as soon as you have an entry for every job and
 overwrite it as you refine it. A missing file scores zero. Write no other files.
 
-Several schedules may agree with the whole log. Any of them predicts the same
-instants, so it is the timestamps that are graded, not a recovered expression.
+The timestamps are what is graded, not a recovered crontab: any working you
+like is fine, so long as the instants come out right.
 
 Your submission is correct when both of the following hold:
 
@@ -84,4 +90,4 @@ Your submission is correct when both of the following hold:
    appear in `jobs.json`, using the field names, types and formats described
    above.
 2. Every entry lists exactly the instants that job fires in the prediction
-   window — none missing and none extra. All thirty must be right.
+   window — none missing and none extra. All twenty-four must be right.

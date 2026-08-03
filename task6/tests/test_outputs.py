@@ -10,14 +10,15 @@ are kept here rather than read back from /app/data because that directory is
 writable by the agent.
 
 The key was established twice over, by two paths that share no code: once by
-running the reference inference over the log and projecting the recovered
-schedules forward, and once by simulating the generator's hidden schedules
-forward directly. Both agree on all 1581 instants. The generator also verified
-that every schedule consistent with the log -- 39 of them across the thirty
-jobs, several jobs admitting more than one -- projects to the same instants, so
-the answer is well defined even though the schedule is not always unique.
+recovering the clock and the schedules from the log alone and projecting them
+forward, and once by simulating the generator's hidden schedules forward
+directly under the true clock. Both agree on all 5911 instants. The generator
+also verified that exactly one clock rule and exactly one schedule per job fit
+the log, so the answer is well defined -- which matters here, because the two
+clock changes inside the prediction window are never observed and have to be
+extrapolated.
 
-Grading is all-or-nothing across all thirty jobs.
+Grading is all-or-nothing across all twenty-four jobs.
 """
 import json
 import os
@@ -105,7 +106,8 @@ def test_output_schema():
 
 def test_predicted_firings_are_exact():
     """Criterion 2: every entry lists exactly the instants that job fires in
-    the prediction window -- none missing and none extra, across all thirty."""
+    the prediction window -- none missing and none extra, across all
+    twenty-four."""
     expected = _expected()
     rows = _parse(_read_result(), expected)
 
