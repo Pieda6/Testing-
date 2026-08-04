@@ -1,7 +1,7 @@
 # dynamo/hai-surveillance-adjudication
 
 A surveillance definitions manual with its twelve constants redacted, a prior
-state audit of 28 patients whose 24 adjudications were validated under the
+state audit of 28 patients whose adjudications were validated under the
 complete manual, and a held-out quarter of 36 patients with none. Recover the
 constants from the audit, then adjudicate the held-out quarter with them.
 
@@ -54,7 +54,7 @@ open. Twelve values are missing in all.
 
 The load-bearing check. A grid of **4,811,400 settings**, wider than the truth
 in every direction, exhausted against the audit: **exactly one** reproduces all
-24 validated adjudications, and it is the setting the data was generated from.
+28 validated adjudications, and it is the setting the data was generated from.
 
 The first sweep found *two* survivors, differing in where the attribution period
 opens — that discriminator had been built with its sign exactly at the window
