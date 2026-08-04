@@ -1,7 +1,7 @@
 # dynamo/hai-surveillance-adjudication
 
 A surveillance definitions manual with its twelve constants redacted, a prior
-state audit of 36 patients — four of whose entries are wrong, and which ones is
+state audit of 39 patients — four of whose entries are wrong, and which ones is
 not recorded — and a held-out quarter of 36 patients with no adjudications.
 Recover the constants from the audit, then adjudicate the held-out quarter.
 
@@ -31,14 +31,22 @@ or `tests/`.
 
 ## What makes it hard
 
-- **The fit is joint, not separable.** The width of the window decides the date
-  of event, and the date of event decides healthcare association, ward
-  attribution and line association together. Constants recovered one at a time
-  are each defensible and wrong in combination.
-- **The audit has to be read for what it excludes.** The validated entries
-  reporting *no* event for a patient with a positive culture are what pin the
-  admission-day cut and the window edges. A solver that studies only the entries
-  reporting events pins almost nothing.
+- **The fit is joint, and the audit cannot be made separable.** No two audit
+  patients differ in a single element. Each stacks several boundaries at once, so
+  widening the window moves the date of event, which moves the admission-day
+  test, the transfer test and the timeframe test with it. Each of the 31
+  boundary-bearing patients is sensitive to three to eight of the twelve
+  constants, 4.6 on average — a mismatch says one of several is wrong and does
+  not say which. There is no pair to read a constant off and no order in which
+  the twelve can be settled one at a time. A mistake in the procedure looks
+  exactly like a mistake in a constant.
+- **The audit has to be read for what it excludes.** Twenty-two of the 39
+  entries report fewer events than the patient has positive cultures — one
+  suppressed by the admission-day cut, a sign a day outside the window, a
+  commensal pair drawn a day too far apart, a repeat absorbed into an open
+  timeframe, a bloodstream culture demoted to secondary. Those absences pin the
+  cut, the window edges, the drawing gap, the timeframe and the attribution
+  period. A solver reasoning only from reported events pins almost nothing.
 - **The audit is not clean.** No setting reproduces all of it, so a search that
   demands consistency finds nothing — and one that relaxes a constant until the
   last stubborn entry fits lands on a setting explaining somebody's slip. The
@@ -56,12 +64,20 @@ open. Twelve values are missing in all.
 
 ## Well-posedness
 
-The load-bearing check. A grid of **4,811,400 settings**, wider than the truth
-in every direction, exhausted against the audit: **exactly one** explains the
-most entries — 32 of 36 — and it is the setting the data was generated from,
-with every other setting strictly behind.
+Two checks, run together.
 
-Two earlier sweeps were rejected by this check before anything shipped.
+*Uniqueness.* A grid of **4,811,400 settings**, wider than the truth in every
+direction, exhausted against the audit: **exactly one** explains the most
+entries — 35 of 39 — and it is the setting the data was generated from, with
+every other setting strictly behind.
+
+*Non-separability.* For every patient, how many of the twelve constants have
+some value in the grid that changes that patient's adjudication. Every
+boundary-bearing patient is changed by **at least three**; the eight changed by
+none are exactly the eight it is safe to put an error on. A patient changed by
+one constant would hand that constant over on its own, and is rejected.
+
+Three earlier designs were rejected by these checks before anything shipped.
 
 The first left *two* survivors differing in where the attribution period opens:
 that discriminator had its sign exactly at the window edge, where both readings
@@ -78,6 +94,14 @@ a ward never occupied, an organism never cultured, a date no window can reach �
 and each falls on a chart that pins no constant, since agreement is scored per
 patient and corrupting a discriminator destroys its evidence too.
 
+The third was the audit this one replaces. It pinned the constants uniquely, but
+as contrastive twins: two patients identical but for one element, so each
+constant could be read off one pair. Uniqueness and separability are different
+properties and it had only the first. Randomising every offset to destroy the
+twins destroyed the information with them — charts placed away from a boundary
+pin nothing, and 168 to 792 settings tied. Stacking boundaries instead of
+isolating them is what gives both properties at once.
+
 The held-out quarter was then checked to exercise every constant: each of the 21
 single-constant perturbations changes the answer for at least one held-out
 patient, so no recovered value is decorative.
@@ -87,7 +111,8 @@ patient, so no recovered value is decorative.
 Lives in `dev7/`, outside this directory:
 
     params.py     the procedure with all twelve constants left free
-    gen2.py       generator: the audit set (boundaries hand-placed) and held-out
+    gen2.py       the held-out quarter, and the audit design this replaced
+    gen4.py       the shipped audit: stacked boundaries, both checks, corruptions
     fit.py        exhausts the 4.8M grid; proves the audit pins one setting
     controls2.py  scores each mis-recovered constant on the held-out quarter
     harness.py    runs the verifier against the oracle and against wrong answers

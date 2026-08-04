@@ -5,10 +5,12 @@ complete manual. `/app/data/records.json` is a held-out quarter with no
 adjudications.
 
 The audit was re-adjudicated by hand and **some of its entries are wrong** — at
-most five of the thirty-six. Which ones is not recorded.
+most five of the thirty-nine. Which ones is not recorded.
 
 Recover what the manual is missing from the audit, then adjudicate the held-out
-quarter with it.
+quarter with it. No two audit patients differ in a single element, and every one
+of them turns on several of the withheld values at once, so nothing can be read
+off a comparison of two of them: the fit is joint and has to be searched as one.
 
 All records are synthetic. No part of them comes from a real person.
 
@@ -34,8 +36,8 @@ must be reported), and `patients`. Each patient is
 `signs` (a list of `{"date", "elements"}`). All dates are `YYYY-MM-DD`.
 
 `audited.json` additionally carries `adjudications`: one entry per audit
-patient, in the output shape below. An entry reporting no events is as
-informative as one reporting several.
+patient, in the output shape below. An entry reporting fewer events than the
+cultures suggest is as informative as one reporting several.
 
 The data is complete: a sign that is not listed was not recorded, and a culture
 that is not listed was not taken.
@@ -66,8 +68,9 @@ bloodstream events only — is a JSON boolean.
 `central_line_days` has one entry per ward, **in the order `wards` lists them**,
 with `days` a non-negative integer, counted over the held-out patients.
 
-Write `/app/answer.json` as soon as you have an entry for every held-out patient
-and overwrite it as you refine it. A missing file scores zero. Write no other
+Write `/app/answer.json` before you are confident in it — as soon as you can put
+one entry on disk for every held-out patient, even if you expect to change them
+— and overwrite it as you refine. A missing file scores zero. Write no other
 files.
 
 Your submission is correct when both of the following hold:

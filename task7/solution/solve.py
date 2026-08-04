@@ -27,11 +27,14 @@ Three things carry the work.
    patient it touches. What is wanted is the setting with the highest
    agreement, plus a check that it wins outright rather than ties.
 
-1. The fit has to be joint. The constants interact: the width of the window
-   decides the date of event, and the date of event decides healthcare
-   association, ward attribution and line association all at once. Fitting one
-   constant at a time against the audit gives an answer that is right for each
-   in isolation and wrong together.
+1. The fit has to be joint, and the audit gives no way to make it separable. No
+   two audit patients differ in a single element; each sits on several
+   boundaries at once, so widening the window moves the date of event, which
+   moves the admission-day test, the transfer test and the timeframe test with
+   it. A mismatch says one of several constants is wrong and does not say which,
+   so there is no pair to read a value off and no order in which the twelve can
+   be settled one at a time. It also means a mistake in this procedure looks
+   exactly like a mistake in a constant.
 
 2. The audit has to be read for what it excludes, not only for what it
    contains. A validated adjudication reporting NO event for a patient who has
