@@ -2,6 +2,7 @@ artifacts = ["/app/answer.json"]
 
 [task]
 name = "dynamo/hai-surveillance-adjudication"
+description = "Recover twelve redacted constants of a surveillance definitions manual from a prior state audit, then use them to adjudicate which healthcare-associated infections are reportable across a held-out quarter of synthetic inpatient records."
 
 [metadata]
 # --- Pre-seeded for you when this repo was created — DO NOT EDIT ---
