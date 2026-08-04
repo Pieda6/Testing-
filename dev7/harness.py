@@ -42,6 +42,8 @@ def main():
     solver = load("t7solve", os.path.join(TASK, "solution", "solve.py"), result)
     solver.RECORDS_PATH = os.path.join(TASK, "environment", "data",
                                        "records.json")
+    solver.AUDIT_PATH = os.path.join(TASK, "environment", "data",
+                                     "audited.json")
 
     def write(obj):
         with open(result, "w") as f:

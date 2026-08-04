@@ -733,6 +733,223 @@
    "id": "PT-021",
    "admissions": [
     {
+     "admit": "2026-02-11",
+     "discharge": "2026-03-03",
+     "wards": [
+      {
+       "ward": "W3B",
+       "arrive": "2026-02-11"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-02-16",
+       "source": "urine",
+       "organisms": [
+        "Enterobacter cloacae"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-02-19",
+       "elements": [
+        "urgency"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "PT-022",
+   "admissions": [
+    {
+     "admit": "2026-02-11",
+     "discharge": "2026-03-03",
+     "wards": [
+      {
+       "ward": "W5A",
+       "arrive": "2026-02-11"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-02-16",
+       "source": "urine",
+       "organisms": [
+        "Serratia marcescens"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-02-20",
+       "elements": [
+        "urgency"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "PT-023",
+   "admissions": [
+    {
+     "admit": "2026-02-05",
+     "discharge": "2026-03-08",
+     "wards": [
+      {
+       "ward": "W3B",
+       "arrive": "2026-02-05"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-02-17",
+       "source": "blood",
+       "organisms": [
+        "Pseudomonas aeruginosa"
+       ]
+      },
+      {
+       "date": "2026-02-20",
+       "source": "urine",
+       "organisms": [
+        "Pseudomonas aeruginosa"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-02-18",
+       "elements": [
+        "dysuria"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "PT-024",
+   "admissions": [
+    {
+     "admit": "2026-02-05",
+     "discharge": "2026-03-12",
+     "wards": [
+      {
+       "ward": "W5A",
+       "arrive": "2026-02-05"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-02-14",
+       "source": "urine",
+       "organisms": [
+        "Klebsiella pneumoniae"
+       ]
+      },
+      {
+       "date": "2026-02-27",
+       "source": "blood",
+       "organisms": [
+        "Klebsiella pneumoniae"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-02-14",
+       "elements": [
+        "fever"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "PT-025",
+   "admissions": [
+    {
+     "admit": "2026-02-05",
+     "discharge": "2026-03-12",
+     "wards": [
+      {
+       "ward": "W7C",
+       "arrive": "2026-02-05"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-02-14",
+       "source": "urine",
+       "organisms": [
+        "Enterococcus faecalis"
+       ]
+      },
+      {
+       "date": "2026-02-28",
+       "source": "blood",
+       "organisms": [
+        "Enterococcus faecalis"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-02-14",
+       "elements": [
+        "fever"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "PT-026",
+   "admissions": [
+    {
+     "admit": "2026-02-06",
+     "discharge": "2026-02-28",
+     "wards": [
+      {
+       "ward": "SICU",
+       "arrive": "2026-02-06"
+      }
+     ],
+     "central_lines": [
+      {
+       "insert": "2026-02-08",
+       "remove": "2026-02-16"
+      }
+     ],
+     "cultures": [
+      {
+       "date": "2026-02-18",
+       "source": "blood",
+       "organisms": [
+        "Serratia marcescens"
+       ]
+      }
+     ],
+     "signs": []
+    }
+   ]
+  },
+  {
+   "id": "PT-027",
+   "admissions": [
+    {
      "admit": "2026-02-18",
      "discharge": "2026-03-17",
      "wards": [
@@ -776,7 +993,7 @@
    ]
   },
   {
-   "id": "PT-022",
+   "id": "PT-028",
    "admissions": [
     {
      "admit": "2026-03-06",
@@ -822,7 +1039,7 @@
    ]
   },
   {
-   "id": "PT-023",
+   "id": "PT-029",
    "admissions": [
     {
      "admit": "2026-02-15",
@@ -860,7 +1077,7 @@
    ]
   },
   {
-   "id": "PT-024",
+   "id": "PT-030",
    "admissions": [
     {
      "admit": "2026-02-08",
@@ -906,7 +1123,7 @@
    ]
   },
   {
-   "id": "PT-025",
+   "id": "PT-031",
    "admissions": [
     {
      "admit": "2026-03-09",
@@ -924,7 +1141,7 @@
    ]
   },
   {
-   "id": "PT-026",
+   "id": "PT-032",
    "admissions": [
     {
      "admit": "2026-02-23",
@@ -975,7 +1192,7 @@
    ]
   },
   {
-   "id": "PT-027",
+   "id": "PT-033",
    "admissions": [
     {
      "admit": "2026-02-16",
@@ -1026,7 +1243,7 @@
    ]
   },
   {
-   "id": "PT-028",
+   "id": "PT-034",
    "admissions": [
     {
      "admit": "2026-02-19",
@@ -1077,7 +1294,7 @@
    ]
   },
   {
-   "id": "PT-029",
+   "id": "PT-035",
    "admissions": [
     {
      "admit": "2026-02-18",
@@ -1123,7 +1340,7 @@
    ]
   },
   {
-   "id": "PT-030",
+   "id": "PT-036",
    "admissions": [
     {
      "admit": "2026-03-04",

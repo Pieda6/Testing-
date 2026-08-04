@@ -290,9 +290,40 @@ def held_out():
         .line("2025-12-29", "2026-01-06")
         .blood("2026-01-02", "Escherichia coli"))
 
+    # --- the constants the rest of the held-out set does not exercise ----
+    # a sign exactly at the far edge of the window, and one a day past it
+    add(Adm("2026-02-11", "2026-03-03").w("W3B", "2026-02-11")
+        .urine("2026-02-16", "Enterobacter cloacae")
+        .sign("2026-02-19", "urgency"))
+    add(Adm("2026-02-11", "2026-03-03").w("W5A", "2026-02-11")
+        .urine("2026-02-16", "Serratia marcescens")
+        .sign("2026-02-20", "urgency"))
+
+    # a blood culture in the one-day gap between the two readings of where the
+    # attribution period opens
+    add(Adm("2026-02-05", "2026-03-08").w("W3B", "2026-02-05")
+        .urine("2026-02-20", "Pseudomonas aeruginosa")
+        .sign("2026-02-18", "dysuria")
+        .blood("2026-02-17", "Pseudomonas aeruginosa"))
+
+    # the last day of the attribution period, and the first day past it
+    add(Adm("2026-02-05", "2026-03-12").w("W5A", "2026-02-05")
+        .urine("2026-02-14", "Klebsiella pneumoniae")
+        .sign("2026-02-14", "fever")
+        .blood("2026-02-27", "Klebsiella pneumoniae"))
+    add(Adm("2026-02-05", "2026-03-12").w("W7C", "2026-02-05")
+        .urine("2026-02-14", "Enterococcus faecalis")
+        .sign("2026-02-14", "fever")
+        .blood("2026-02-28", "Enterococcus faecalis"))
+
+    # two days after a line came out
+    add(Adm("2026-02-06", "2026-02-28").w("SICU", "2026-02-06")
+        .line("2026-02-08", "2026-02-16")
+        .blood("2026-02-18", "Serratia marcescens"))
+
     # deterministic filler for volume
     i = 0
-    while len(P) < 30:
+    while len(P) < 36:
         tag = "h%d" % i
         start = dt.date(2026, 2, 1) + dt.timedelta(days=det_int(tag + "s") % 40)
         stay = 10 + det_int(tag + "l") % 20

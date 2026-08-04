@@ -1,0 +1,1311 @@
+{
+ "period_start": "2026-01-01",
+ "period_end": "2026-04-01",
+ "wards": [
+  "MICU",
+  "SICU",
+  "W3B",
+  "W5A",
+  "W7C"
+ ],
+ "patients": [
+  {
+   "id": "AUD-001",
+   "admissions": [
+    {
+     "admit": "2026-01-05",
+     "discharge": "2026-01-20",
+     "wards": [
+      {
+       "ward": "W5A",
+       "arrive": "2026-01-05"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-06",
+       "source": "blood",
+       "organisms": [
+        "Escherichia coli"
+       ]
+      }
+     ],
+     "signs": []
+    }
+   ]
+  },
+  {
+   "id": "AUD-002",
+   "admissions": [
+    {
+     "admit": "2026-01-05",
+     "discharge": "2026-01-20",
+     "wards": [
+      {
+       "ward": "W5A",
+       "arrive": "2026-01-05"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-07",
+       "source": "blood",
+       "organisms": [
+        "Escherichia coli"
+       ]
+      }
+     ],
+     "signs": []
+    }
+   ]
+  },
+  {
+   "id": "AUD-003",
+   "admissions": [
+    {
+     "admit": "2026-01-05",
+     "discharge": "2026-01-20",
+     "wards": [
+      {
+       "ward": "W5A",
+       "arrive": "2026-01-05"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-08",
+       "source": "blood",
+       "organisms": [
+        "Klebsiella pneumoniae"
+       ]
+      }
+     ],
+     "signs": []
+    }
+   ]
+  },
+  {
+   "id": "AUD-004",
+   "admissions": [
+    {
+     "admit": "2026-01-04",
+     "discharge": "2026-01-24",
+     "wards": [
+      {
+       "ward": "W3B",
+       "arrive": "2026-01-04"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-14",
+       "source": "urine",
+       "organisms": [
+        "Escherichia coli"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-01-11",
+       "elements": [
+        "dysuria"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "AUD-005",
+   "admissions": [
+    {
+     "admit": "2026-01-04",
+     "discharge": "2026-01-24",
+     "wards": [
+      {
+       "ward": "W3B",
+       "arrive": "2026-01-04"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-14",
+       "source": "urine",
+       "organisms": [
+        "Klebsiella pneumoniae"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-01-10",
+       "elements": [
+        "dysuria"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "AUD-006",
+   "admissions": [
+    {
+     "admit": "2026-01-04",
+     "discharge": "2026-01-24",
+     "wards": [
+      {
+       "ward": "W5A",
+       "arrive": "2026-01-04"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-14",
+       "source": "urine",
+       "organisms": [
+        "Enterobacter cloacae"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-01-17",
+       "elements": [
+        "urgency"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "AUD-007",
+   "admissions": [
+    {
+     "admit": "2026-01-04",
+     "discharge": "2026-01-24",
+     "wards": [
+      {
+       "ward": "W5A",
+       "arrive": "2026-01-04"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-14",
+       "source": "urine",
+       "organisms": [
+        "Serratia marcescens"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-01-18",
+       "elements": [
+        "urgency"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "AUD-008",
+   "admissions": [
+    {
+     "admit": "2026-01-04",
+     "discharge": "2026-01-24",
+     "wards": [
+      {
+       "ward": "W7C",
+       "arrive": "2026-01-04"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-15",
+       "source": "urine",
+       "organisms": [
+        "Pseudomonas aeruginosa"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-01-13",
+       "elements": [
+        "suprapubic_tenderness"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "AUD-009",
+   "admissions": [
+    {
+     "admit": "2026-01-02",
+     "discharge": "2026-02-15",
+     "wards": [
+      {
+       "ward": "W5A",
+       "arrive": "2026-01-02"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-06",
+       "source": "blood",
+       "organisms": [
+        "Escherichia coli"
+       ]
+      },
+      {
+       "date": "2026-01-19",
+       "source": "blood",
+       "organisms": [
+        "Candida albicans"
+       ]
+      }
+     ],
+     "signs": []
+    }
+   ]
+  },
+  {
+   "id": "AUD-010",
+   "admissions": [
+    {
+     "admit": "2026-01-02",
+     "discharge": "2026-02-15",
+     "wards": [
+      {
+       "ward": "W5A",
+       "arrive": "2026-01-02"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-06",
+       "source": "blood",
+       "organisms": [
+        "Escherichia coli"
+       ]
+      },
+      {
+       "date": "2026-01-20",
+       "source": "blood",
+       "organisms": [
+        "Candida albicans"
+       ]
+      }
+     ],
+     "signs": []
+    }
+   ]
+  },
+  {
+   "id": "AUD-011",
+   "admissions": [
+    {
+     "admit": "2026-01-03",
+     "discharge": "2026-02-03",
+     "wards": [
+      {
+       "ward": "W3B",
+       "arrive": "2026-01-03"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-12",
+       "source": "blood",
+       "organisms": [
+        "Escherichia coli"
+       ]
+      },
+      {
+       "date": "2026-01-16",
+       "source": "urine",
+       "organisms": [
+        "Escherichia coli"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-01-16",
+       "elements": [
+        "fever"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "AUD-012",
+   "admissions": [
+    {
+     "admit": "2026-01-03",
+     "discharge": "2026-02-03",
+     "wards": [
+      {
+       "ward": "W5A",
+       "arrive": "2026-01-03"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-17",
+       "source": "blood",
+       "organisms": [
+        "Pseudomonas aeruginosa"
+       ]
+      },
+      {
+       "date": "2026-01-20",
+       "source": "urine",
+       "organisms": [
+        "Pseudomonas aeruginosa"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-01-18",
+       "elements": [
+        "dysuria"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "AUD-013",
+   "admissions": [
+    {
+     "admit": "2026-01-03",
+     "discharge": "2026-02-03",
+     "wards": [
+      {
+       "ward": "W3B",
+       "arrive": "2026-01-03"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-20",
+       "source": "urine",
+       "organisms": [
+        "Klebsiella pneumoniae"
+       ]
+      },
+      {
+       "date": "2026-02-02",
+       "source": "blood",
+       "organisms": [
+        "Klebsiella pneumoniae"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-01-17",
+       "elements": [
+        "dysuria"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "AUD-014",
+   "admissions": [
+    {
+     "admit": "2026-01-03",
+     "discharge": "2026-02-06",
+     "wards": [
+      {
+       "ward": "W3B",
+       "arrive": "2026-01-03"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-20",
+       "source": "urine",
+       "organisms": [
+        "Enterococcus faecalis"
+       ]
+      },
+      {
+       "date": "2026-02-03",
+       "source": "blood",
+       "organisms": [
+        "Enterococcus faecalis"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-01-17",
+       "elements": [
+        "dysuria"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "AUD-015",
+   "admissions": [
+    {
+     "admit": "2026-01-05",
+     "discharge": "2026-01-25",
+     "wards": [
+      {
+       "ward": "MICU",
+       "arrive": "2026-01-05"
+      }
+     ],
+     "central_lines": [
+      {
+       "insert": "2026-01-10",
+       "remove": "2026-01-18"
+      }
+     ],
+     "cultures": [
+      {
+       "date": "2026-01-11",
+       "source": "blood",
+       "organisms": [
+        "Staphylococcus aureus"
+       ]
+      }
+     ],
+     "signs": []
+    }
+   ]
+  },
+  {
+   "id": "AUD-016",
+   "admissions": [
+    {
+     "admit": "2026-01-05",
+     "discharge": "2026-01-25",
+     "wards": [
+      {
+       "ward": "MICU",
+       "arrive": "2026-01-05"
+      }
+     ],
+     "central_lines": [
+      {
+       "insert": "2026-01-10",
+       "remove": "2026-01-18"
+      }
+     ],
+     "cultures": [
+      {
+       "date": "2026-01-12",
+       "source": "blood",
+       "organisms": [
+        "Staphylococcus aureus"
+       ]
+      }
+     ],
+     "signs": []
+    }
+   ]
+  },
+  {
+   "id": "AUD-017",
+   "admissions": [
+    {
+     "admit": "2026-01-05",
+     "discharge": "2026-01-28",
+     "wards": [
+      {
+       "ward": "SICU",
+       "arrive": "2026-01-05"
+      }
+     ],
+     "central_lines": [
+      {
+       "insert": "2026-01-08",
+       "remove": "2026-01-16"
+      }
+     ],
+     "cultures": [
+      {
+       "date": "2026-01-17",
+       "source": "blood",
+       "organisms": [
+        "Serratia marcescens"
+       ]
+      }
+     ],
+     "signs": []
+    }
+   ]
+  },
+  {
+   "id": "AUD-018",
+   "admissions": [
+    {
+     "admit": "2026-01-05",
+     "discharge": "2026-01-28",
+     "wards": [
+      {
+       "ward": "SICU",
+       "arrive": "2026-01-05"
+      }
+     ],
+     "central_lines": [
+      {
+       "insert": "2026-01-08",
+       "remove": "2026-01-16"
+      }
+     ],
+     "cultures": [
+      {
+       "date": "2026-01-18",
+       "source": "blood",
+       "organisms": [
+        "Serratia marcescens"
+       ]
+      }
+     ],
+     "signs": []
+    }
+   ]
+  },
+  {
+   "id": "AUD-019",
+   "admissions": [
+    {
+     "admit": "2026-01-05",
+     "discharge": "2026-01-25",
+     "wards": [
+      {
+       "ward": "MICU",
+       "arrive": "2026-01-05"
+      },
+      {
+       "ward": "W5A",
+       "arrive": "2026-01-14"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-14",
+       "source": "blood",
+       "organisms": [
+        "Enterobacter cloacae"
+       ]
+      }
+     ],
+     "signs": []
+    }
+   ]
+  },
+  {
+   "id": "AUD-020",
+   "admissions": [
+    {
+     "admit": "2026-01-05",
+     "discharge": "2026-01-25",
+     "wards": [
+      {
+       "ward": "MICU",
+       "arrive": "2026-01-05"
+      },
+      {
+       "ward": "W5A",
+       "arrive": "2026-01-14"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-15",
+       "source": "blood",
+       "organisms": [
+        "Enterobacter cloacae"
+       ]
+      }
+     ],
+     "signs": []
+    }
+   ]
+  },
+  {
+   "id": "AUD-021",
+   "admissions": [
+    {
+     "admit": "2026-01-05",
+     "discharge": "2026-01-25",
+     "wards": [
+      {
+       "ward": "MICU",
+       "arrive": "2026-01-05"
+      },
+      {
+       "ward": "W5A",
+       "arrive": "2026-01-14"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-16",
+       "source": "blood",
+       "organisms": [
+        "Enterobacter cloacae"
+       ]
+      }
+     ],
+     "signs": []
+    }
+   ]
+  },
+  {
+   "id": "AUD-022",
+   "admissions": [
+    {
+     "admit": "2026-01-05",
+     "discharge": "2026-01-25",
+     "wards": [
+      {
+       "ward": "W7C",
+       "arrive": "2026-01-05"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-12",
+       "source": "blood",
+       "organisms": [
+        "Staphylococcus epidermidis"
+       ]
+      },
+      {
+       "date": "2026-01-13",
+       "source": "blood",
+       "organisms": [
+        "Staphylococcus epidermidis"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-01-12",
+       "elements": [
+        "chills"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "AUD-023",
+   "admissions": [
+    {
+     "admit": "2026-01-05",
+     "discharge": "2026-01-25",
+     "wards": [
+      {
+       "ward": "W7C",
+       "arrive": "2026-01-05"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-12",
+       "source": "blood",
+       "organisms": [
+        "Micrococcus species"
+       ]
+      },
+      {
+       "date": "2026-01-14",
+       "source": "blood",
+       "organisms": [
+        "Micrococcus species"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-01-12",
+       "elements": [
+        "chills"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "AUD-024",
+   "admissions": [
+    {
+     "admit": "2026-01-05",
+     "discharge": "2026-01-25",
+     "wards": [
+      {
+       "ward": "W7C",
+       "arrive": "2026-01-05"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-12",
+       "source": "blood",
+       "organisms": [
+        "Corynebacterium species"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-01-12",
+       "elements": [
+        "chills"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "AUD-025",
+   "admissions": [
+    {
+     "admit": "2026-01-06",
+     "discharge": "2026-01-26",
+     "wards": [
+      {
+       "ward": "MICU",
+       "arrive": "2026-01-06"
+      }
+     ],
+     "central_lines": [
+      {
+       "insert": "2026-01-06",
+       "remove": "2026-01-24"
+      }
+     ],
+     "cultures": [
+      {
+       "date": "2026-01-12",
+       "source": "blood",
+       "organisms": [
+        "Staphylococcus aureus",
+        "Staphylococcus epidermidis"
+       ]
+      }
+     ],
+     "signs": []
+    }
+   ]
+  },
+  {
+   "id": "AUD-026",
+   "admissions": [
+    {
+     "admit": "2026-01-06",
+     "discharge": "2026-01-26",
+     "wards": [
+      {
+       "ward": "W3B",
+       "arrive": "2026-01-06"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-12",
+       "source": "urine",
+       "organisms": [
+        "Cutibacterium acnes"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-01-12",
+       "elements": [
+        "fever"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "AUD-027",
+   "admissions": [
+    {
+     "admit": "2026-01-04",
+     "discharge": "2026-02-14",
+     "wards": [
+      {
+       "ward": "W3B",
+       "arrive": "2026-01-04"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-10",
+       "source": "urine",
+       "organisms": [
+        "Escherichia coli"
+       ]
+      },
+      {
+       "date": "2026-01-18",
+       "source": "urine",
+       "organisms": [
+        "Klebsiella pneumoniae"
+       ]
+      },
+      {
+       "date": "2026-01-19",
+       "source": "blood",
+       "organisms": [
+        "Klebsiella pneumoniae"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-01-10",
+       "elements": [
+        "fever"
+       ]
+      },
+      {
+       "date": "2026-01-18",
+       "elements": [
+        "fever"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "AUD-028",
+   "admissions": [
+    {
+     "admit": "2026-01-10",
+     "discharge": "2026-01-30",
+     "wards": [
+      {
+       "ward": "W5A",
+       "arrive": "2026-01-10"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-01-14",
+       "source": "urine",
+       "organisms": [
+        "Escherichia coli"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-01-11",
+       "elements": [
+        "dysuria"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "adjudications": [
+  {
+   "id": "AUD-001",
+   "uti": [],
+   "bsi": []
+  },
+  {
+   "id": "AUD-002",
+   "uti": [],
+   "bsi": [
+    {
+     "date_of_event": "2026-01-07",
+     "ward": "W5A",
+     "organisms": [
+      "Escherichia coli"
+     ],
+     "central_line_associated": false
+    }
+   ]
+  },
+  {
+   "id": "AUD-003",
+   "uti": [],
+   "bsi": [
+    {
+     "date_of_event": "2026-01-08",
+     "ward": "W5A",
+     "organisms": [
+      "Klebsiella pneumoniae"
+     ],
+     "central_line_associated": false
+    }
+   ]
+  },
+  {
+   "id": "AUD-004",
+   "uti": [
+    {
+     "date_of_event": "2026-01-11",
+     "ward": "W3B",
+     "organisms": [
+      "Escherichia coli"
+     ]
+    }
+   ],
+   "bsi": []
+  },
+  {
+   "id": "AUD-005",
+   "uti": [],
+   "bsi": []
+  },
+  {
+   "id": "AUD-006",
+   "uti": [
+    {
+     "date_of_event": "2026-01-14",
+     "ward": "W5A",
+     "organisms": [
+      "Enterobacter cloacae"
+     ]
+    }
+   ],
+   "bsi": []
+  },
+  {
+   "id": "AUD-007",
+   "uti": [],
+   "bsi": []
+  },
+  {
+   "id": "AUD-008",
+   "uti": [
+    {
+     "date_of_event": "2026-01-13",
+     "ward": "W7C",
+     "organisms": [
+      "Pseudomonas aeruginosa"
+     ]
+    }
+   ],
+   "bsi": []
+  },
+  {
+   "id": "AUD-009",
+   "uti": [],
+   "bsi": [
+    {
+     "date_of_event": "2026-01-06",
+     "ward": "W5A",
+     "organisms": [
+      "Candida albicans",
+      "Escherichia coli"
+     ],
+     "central_line_associated": false
+    }
+   ]
+  },
+  {
+   "id": "AUD-010",
+   "uti": [],
+   "bsi": [
+    {
+     "date_of_event": "2026-01-06",
+     "ward": "W5A",
+     "organisms": [
+      "Escherichia coli"
+     ],
+     "central_line_associated": false
+    },
+    {
+     "date_of_event": "2026-01-20",
+     "ward": "W5A",
+     "organisms": [
+      "Candida albicans"
+     ],
+     "central_line_associated": false
+    }
+   ]
+  },
+  {
+   "id": "AUD-011",
+   "uti": [
+    {
+     "date_of_event": "2026-01-16",
+     "ward": "W3B",
+     "organisms": [
+      "Escherichia coli"
+     ]
+    }
+   ],
+   "bsi": [
+    {
+     "date_of_event": "2026-01-12",
+     "ward": "W3B",
+     "organisms": [
+      "Escherichia coli"
+     ],
+     "central_line_associated": false
+    }
+   ]
+  },
+  {
+   "id": "AUD-012",
+   "uti": [
+    {
+     "date_of_event": "2026-01-18",
+     "ward": "W5A",
+     "organisms": [
+      "Pseudomonas aeruginosa"
+     ]
+    }
+   ],
+   "bsi": []
+  },
+  {
+   "id": "AUD-013",
+   "uti": [
+    {
+     "date_of_event": "2026-01-17",
+     "ward": "W3B",
+     "organisms": [
+      "Klebsiella pneumoniae"
+     ]
+    }
+   ],
+   "bsi": []
+  },
+  {
+   "id": "AUD-014",
+   "uti": [
+    {
+     "date_of_event": "2026-01-17",
+     "ward": "W3B",
+     "organisms": [
+      "Enterococcus faecalis"
+     ]
+    }
+   ],
+   "bsi": [
+    {
+     "date_of_event": "2026-02-03",
+     "ward": "W3B",
+     "organisms": [
+      "Enterococcus faecalis"
+     ],
+     "central_line_associated": false
+    }
+   ]
+  },
+  {
+   "id": "AUD-015",
+   "uti": [],
+   "bsi": [
+    {
+     "date_of_event": "2026-01-11",
+     "ward": "MICU",
+     "organisms": [
+      "Staphylococcus aureus"
+     ],
+     "central_line_associated": false
+    }
+   ]
+  },
+  {
+   "id": "AUD-016",
+   "uti": [],
+   "bsi": [
+    {
+     "date_of_event": "2026-01-12",
+     "ward": "MICU",
+     "organisms": [
+      "Staphylococcus aureus"
+     ],
+     "central_line_associated": true
+    }
+   ]
+  },
+  {
+   "id": "AUD-017",
+   "uti": [],
+   "bsi": [
+    {
+     "date_of_event": "2026-01-17",
+     "ward": "SICU",
+     "organisms": [
+      "Serratia marcescens"
+     ],
+     "central_line_associated": true
+    }
+   ]
+  },
+  {
+   "id": "AUD-018",
+   "uti": [],
+   "bsi": [
+    {
+     "date_of_event": "2026-01-18",
+     "ward": "SICU",
+     "organisms": [
+      "Serratia marcescens"
+     ],
+     "central_line_associated": false
+    }
+   ]
+  },
+  {
+   "id": "AUD-019",
+   "uti": [],
+   "bsi": [
+    {
+     "date_of_event": "2026-01-14",
+     "ward": "MICU",
+     "organisms": [
+      "Enterobacter cloacae"
+     ],
+     "central_line_associated": false
+    }
+   ]
+  },
+  {
+   "id": "AUD-020",
+   "uti": [],
+   "bsi": [
+    {
+     "date_of_event": "2026-01-15",
+     "ward": "MICU",
+     "organisms": [
+      "Enterobacter cloacae"
+     ],
+     "central_line_associated": false
+    }
+   ]
+  },
+  {
+   "id": "AUD-021",
+   "uti": [],
+   "bsi": [
+    {
+     "date_of_event": "2026-01-16",
+     "ward": "W5A",
+     "organisms": [
+      "Enterobacter cloacae"
+     ],
+     "central_line_associated": false
+    }
+   ]
+  },
+  {
+   "id": "AUD-022",
+   "uti": [],
+   "bsi": [
+    {
+     "date_of_event": "2026-01-12",
+     "ward": "W7C",
+     "organisms": [
+      "Staphylococcus epidermidis"
+     ],
+     "central_line_associated": false
+    }
+   ]
+  },
+  {
+   "id": "AUD-023",
+   "uti": [],
+   "bsi": []
+  },
+  {
+   "id": "AUD-024",
+   "uti": [],
+   "bsi": []
+  },
+  {
+   "id": "AUD-025",
+   "uti": [],
+   "bsi": [
+    {
+     "date_of_event": "2026-01-12",
+     "ward": "MICU",
+     "organisms": [
+      "Staphylococcus aureus"
+     ],
+     "central_line_associated": true
+    }
+   ]
+  },
+  {
+   "id": "AUD-026",
+   "uti": [],
+   "bsi": []
+  },
+  {
+   "id": "AUD-027",
+   "uti": [
+    {
+     "date_of_event": "2026-01-10",
+     "ward": "W3B",
+     "organisms": [
+      "Escherichia coli",
+      "Klebsiella pneumoniae"
+     ]
+    }
+   ],
+   "bsi": []
+  },
+  {
+   "id": "AUD-028",
+   "uti": [],
+   "bsi": []
+  }
+ ]
+}

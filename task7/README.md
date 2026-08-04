@@ -1,10 +1,9 @@
 # dynamo/hai-surveillance-adjudication
 
-One reporting quarter of synthetic inpatient surveillance data — 36 patients,
-37 admissions, 62 cultures, five wards — plus a self-contained definitions
-manual. Adjudicate which healthcare-associated infections are reportable, with
-the date of event, ward, organisms and central line association for each, and
-report the ward device-day denominators.
+A surveillance definitions manual with its twelve constants redacted, a prior
+state audit of 28 patients whose 24 adjudications were validated under the
+complete manual, and a held-out quarter of 36 patients with none. Recover the
+constants from the audit, then adjudicate the held-out quarter with them.
 
 The records are synthetic and generated deterministically from a fixed seed.
 There are no real records, no real identifiers, and nothing derived from a real
@@ -17,8 +16,9 @@ not diagnosis or treatment.
     instruction.md                  what the agent is given and asked for
     environment/Dockerfile          the single image, agent and verifier
     environment/.dockerignore       keeps all but environment/data out of the build
-    environment/data/records.json   the surveillance records (agent-visible)
-    environment/data/manual.md      the governing definitions (agent-visible)
+    environment/data/manual.md      the definitions, constants redacted (agent-visible)
+    environment/data/audited.json   the prior audit: patients + validated adjudications
+    environment/data/records.json   the held-out quarter to adjudicate
     solution/solve.sh               oracle entrypoint
     solution/solve.py               reference adjudicator, standard library only
     tests/test.sh                   verifier entrypoint, writes reward.txt and ctrf.json
@@ -29,77 +29,87 @@ not diagnosis or treatment.
 reaches the agent image, and `environment/Dockerfile` never copies `solution/`
 or `tests/`.
 
+## Why v1 failed, and what changed
+
+v1 shipped the manual complete and asked for correct execution. Pass@2 solved it
+twice at reward 1.0. The two tasks in this repo that cleared every gate --
+`dynamo/legacy-tag-forge` and `dynamo/headerless-pcm-normalize` -- share a
+different shape: the rule is withheld, has to be recovered from examples, and is
+then applied to held-out cases where nothing can check the recovery. Intricacy
+of a *given* specification was never going to bite, because the agent writes a
+program from the spec rather than hand-executing it.
+
+So the manual is redacted. Twelve constants come out, marked `[[?]]` in the
+text, and §5, §8 and §10 each name two possibilities and leave the choice open.
+
 ## What makes it hard
 
-- **Every error is silent.** An adjudication has no self-consistency test. There
-  is no log to replay, no model to re-simulate — a wrong determination produces
-  a coherent, plausible, internally consistent answer set that nothing in the
-  records contradicts. That is the property this task is built around.
-- **The date of event is not the culture date.** It is the earliest element used
-  to meet the definition, often a sign preceding the culture. It then decides
-  healthcare association, ward attribution and line association, so one slip
-  moves three answers — and can drag an event onto admission day 2 where it
-  stops being reportable at all.
-- **The rules are coupled.** A reported urinary tract infection can demote a
-  later blood culture to secondary; organism lists grow as suppressed repeats
-  merge into them; one patient's blood culture is secondary *only* because of an
-  organism an earlier suppression added.
-- **Boundaries everywhere.** Admission day 3, day 14 of the timeframe, a line in
-  place more than two calendar days, the day after removal, a ward arrival on
-  the date of event or the day before, the clip at each end of the reporting
-  period. Each is exercised in both directions by the shipped data.
+- **The fit is joint, not separable.** The width of the window decides the date
+  of event, and the date of event decides healthcare association, ward
+  attribution and line association together. Constants recovered one at a time
+  are each defensible and wrong in combination.
+- **The audit has to be read for what it excludes.** The validated entries
+  reporting *no* event for a patient with a positive culture are what pin the
+  admission-day cut and the window edges. A solver that studies only the entries
+  reporting events pins almost nothing.
+- **Nothing checks the fit on the held-out quarter.** A setting that reproduces
+  the whole audit and is still wrong produces a complete, coherent, plausible
+  adjudication that no part of the data contradicts.
+- **The constants are not the familiar ones.** Two of them differ from what any
+  well-known surveillance system uses, and the instruction says so — filling
+  them in from memory costs a patient.
 
-The manual ships in the container and is authoritative, so nothing depends on
-which edition of a real manual a model has memorised.
+## Well-posedness
 
-## Ground truth
+The load-bearing check. A grid of **4,811,400 settings**, wider than the truth
+in every direction, exhausted against the audit: **exactly one** reproduces all
+24 validated adjudications, and it is the setting the data was generated from.
 
-Two adjudicators that share no code, written the other way round:
+The first sweep found *two* survivors, differing in where the attribution period
+opens — that discriminator had been built with its sign exactly at the window
+edge, which makes the two readings land on the same day. A patient was added
+whose sign sits one day inside, with a blood culture in the resulting gap. The
+re-run leaves one.
 
-1. `solution/solve.py` — date intervals and a candidate pool;
-2. `dev7/brute.py` — explicit per-calendar-day tables, walked day by day.
-
-Each was derived from `manual.md` rather than from the other. They agree on all
-36 patients and on every ward's central line day count. That agreement is the
-whole basis for the key — with no self-consistency test available, one
-implementation's output would be one implementation's opinion.
+The held-out quarter was then checked to exercise every constant: each of the 21
+single-constant perturbations changes the answer for at least one held-out
+patient, so no recovered value is decorative.
 
 ## Dev tooling (not shipped)
 
 Lives in `dev7/`, outside this directory:
 
-    gen.py        deterministic generator; every boundary hand-placed
-    brute.py      the independent adjudicator
-    validate.py   compares the two, and reports what the data exercises
-    controls.py   scores each misreading of the manual, patient by patient
+    params.py     the procedure with all twelve constants left free
+    gen2.py       generator: the audit set (boundaries hand-placed) and held-out
+    fit.py        exhausts the 4.8M grid; proves the audit pins one setting
+    controls2.py  scores each mis-recovered constant on the held-out quarter
     harness.py    runs the real verifier against the oracle and wrong answers
+    gen.py, brute.py, validate.py, controls.py   v1, kept for reference
 
 ## Measured
 
     oracle                                      1.0, byte-identical across re-runs
     no file / empty / nothing reported          0
     all denominators zero / symlinked answer    0
+    schema and single-determination faults      0
 
-Misreadings of the manual, by patients still fully correct out of 36 (all-or-
-nothing grading means every row scores 0):
+One constant recovered wrongly, by held-out patients still fully correct out of
+36 (all-or-nothing grading means every row scores 0):
 
-    signs ignored; culture date used as date of event    28
-    timeframe ignored; every candidate reported          27
-    suppressed candidates dropped, not merged            28
-    a lone commensal culture counted                     32
-    admission day 4 required                             33
-    transfer rule dropped; receiving ward charged        33
-    secondary rule not applied at all                    34
-    admission day 2 treated as reportable                34
-    timeframe run to 15 days                             34
-    attribution period one day too long                  35
-    matched against the UTI culture, not merged list     35
-    commensal pair unmatched by name / two days apart    35
-    line days as 24-hour periods                         35
-    day after removal not counted                        35
-    transfer rule on the day of transfer only            35
-    timeframe started the day after the date of event    35
+    events dated by the anchor, not the earliest element   27
+    bloodstream adjudicated first                          32
+    window one day narrow at the back                      32
+    window one day wide at the back                        34
+    admission-day cut moved either way                     34
+    attribution period opens at the date of event          34
+    day after line removal not counted                     34
+    window off a day at the front, either way              35
+    commensal gap off either way                           35
+    timeframe a day short or a day long                    35
+    attribution period three days short or one day long    35
+    line-day threshold off either way                      35
+    transfer window off either way                         35
+    the familiar values, filled in from memory             35
 
-Two more leave every patient right and the ward denominators wrong, which fails
-just the same: not counting the removal day, and counting days outside the
-reporting period.
+Every one of these still fails the audit, so a solver that fits properly and
+checks its fit catches all of them. They are what a sloppy fit scores.

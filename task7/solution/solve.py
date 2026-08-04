@@ -1,67 +1,93 @@
-"""Reference adjudicator for dynamo/hai-surveillance-adjudication.
+"""Reference solver for dynamo/hai-surveillance-adjudication.
 
-Reads /app/data/records.json, applies /app/data/manual.md, writes
-/app/answer.json. Pure standard library, no randomness, no network.
+Reads /app/data/manual.md, /app/data/audited.json and /app/data/records.json,
+writes /app/answer.json. Pure standard library, no randomness, no network.
 
-The manual specifies a deterministic procedure, so the answer is a function of
-the records. What makes it hard is that the procedure's steps are coupled, and
-every way of getting them wrong produces a coherent, plausible, wrong answer
-set. There is nothing to check the result against -- an adjudication has no
-self-consistency test the way a recovered model replayed against a log does.
+The manual gives the SHAPE of the surveillance definitions and withholds every
+constant in them. Twelve values are missing: how far the infection window
+reaches back and forward, how long a repeat infection timeframe runs, which
+admission day separates present-on-admission from healthcare-associated, which
+infection type is adjudicated first, where a secondary attribution period opens
+and how long it runs, how many days a central line must be in place, how long
+after removal still counts, how close a ward transfer sends an event to the
+transferring ward, how far apart two commensal cultures may be drawn, and
+whether an event is dated by its earliest element or by its culture.
 
-The shape of a correct implementation:
+They are recovered from audited.json -- a prior state audit whose adjudications
+were validated. Build the procedure with the constants left free, find the
+setting that reproduces every validated adjudication, apply it to the held-out
+quarter.
 
-1. Build candidates. A blood culture with a recognised pathogen is a candidate
-   on its own. A blood culture growing only commensals is not -- that needs a
-   second culture of the same admission, on the same or the next calendar day,
-   growing the same commensal, plus a qualifying sign inside the window. A urine
-   culture with a recognised pathogen needs a qualifying sign too.
+Three things carry the work.
 
-2. Date the candidates. This is where the first silent error lives: the date of
-   event is the earliest ELEMENT used to meet the definition, which is often a
-   sign preceding the culture, not the culture date. It decides healthcare
-   association, ward attribution and line association, so getting it wrong
-   moves three answers at once, and can drag an event onto admission day 2 where
-   it stops being reportable at all.
+1. The fit has to be joint. The constants interact: the width of the window
+   decides the date of event, and the date of event decides healthcare
+   association, ward attribution and line association all at once. Fitting one
+   constant at a time against the audit gives an answer that is right for each
+   in isolation and wrong together.
 
-3. Adjudicate urinary tract infections first, then bloodstream infections, each
-   in date-of-event order. The order is not cosmetic: a reported urinary tract
-   infection can demote a later blood culture to secondary, and organism lists
-   grow as suppressions merge into them -- so a blood culture can be secondary
-   only because of an organism a previous suppression added.
+2. The audit has to be read for what it excludes, not only for what it
+   contains. A validated adjudication reporting NO event for a patient who has
+   a positive culture is what pins the admission-day cut and the edges of the
+   window; the patients that do report an event pin far less on their own.
 
-4. Keep one open repeat infection timeframe per type per patient. Inside it a
-   same-type candidate is not a new event; its organisms join the event that
-   opened the timeframe. The timeframe is 14 days counting the date of event as
-   day 1, so day 14 is still inside and day 15 is not, and it carries across
-   admissions.
+3. Nothing checks the fit on the held-out quarter. A setting that reproduces
+   the entire audit and is still wrong -- the timeframe a day long, the window
+   a day narrow, the attribution period opening in the wrong place -- produces
+   a complete, coherent, plausible adjudication that nothing in the data
+   contradicts. That is where this task is decided.
 
-5. Only then work out line association and ward attribution, both of which are
-   calendar-day arithmetic with an off-by-one waiting: a line must be in place
-   more than two days, and the day after removal still counts; a ward arrival on
-   the date of event or the day before sends the event to the transferring ward.
+The search is exhaustive over a generous grid, but staged so the expensive part
+is not repeated. Only five of the constants change which candidates exist at
+all, so the candidate pools are built once per setting of those five. Three
+more affect only the ward and the line flag of an event that is already
+decided, so they are tried last and only for settings whose reported events
+already match. The adjudication walk is what is left in the middle.
 """
+import collections
 import datetime as dt
+import itertools
 import json
 import os
 
 DATA_DIR = "/app/data"
+AUDIT_PATH = os.path.join(DATA_DIR, "audited.json")
 RECORDS_PATH = os.path.join(DATA_DIR, "records.json")
 RESULT_PATH = "/app/answer.json"
 
+Params = collections.namedtuple("Params", [
+    "iwp_before", "iwp_after", "commensal_gap", "doe_rule", "hai_day",
+    "order", "rit_days", "sec_start", "sec_len",
+    "line_min_days", "line_grace", "transfer_window",
+])
+
+POOL_FIELDS = ("iwp_before", "iwp_after", "commensal_gap", "doe_rule",
+               "hai_day")
+WALK_FIELDS = ("order", "rit_days", "sec_start", "sec_len")
+TRIM_FIELDS = ("line_min_days", "line_grace", "transfer_window")
+
+GRID = {
+    "iwp_before": range(1, 6),
+    "iwp_after": range(1, 6),
+    "commensal_gap": range(0, 3),
+    "doe_rule": ["earliest", "culture"],
+    "hai_day": range(2, 5),
+    "order": ["UTI", "BSI"],
+    "rit_days": range(10, 19),
+    "sec_start": ["iwp", "doe"],
+    "sec_len": range(10, 21),
+    "line_min_days": range(2, 5),
+    "line_grace": range(0, 3),
+    "transfer_window": range(0, 3),
+}
+
 COMMENSALS = frozenset([
-    "Bacillus species",
-    "Corynebacterium species",
-    "Cutibacterium acnes",
-    "Micrococcus species",
-    "Staphylococcus epidermidis",
+    "Bacillus species", "Corynebacterium species", "Cutibacterium acnes",
+    "Micrococcus species", "Staphylococcus epidermidis",
 ])
 BSI_SIGNS = frozenset(["fever", "chills", "hypotension"])
 UTI_SIGNS = frozenset(["fever", "dysuria", "urgency", "suprapubic_tenderness",
                        "costovertebral_tenderness"])
-IWP_RADIUS = 3
-RIT_DAYS = 14
-HAI_DAY = 3
 
 
 def d(s):
@@ -72,15 +98,10 @@ def iso(x):
     return x.isoformat()
 
 
-def days(a, b):
-    return (b - a).days
-
-
 class Admission(object):
     def __init__(self, raw):
         self.admit, self.discharge = d(raw["admit"]), d(raw["discharge"])
-        self.wards = [(d(w["arrive"]), w["ward"]) for w in raw["wards"]]
-        self.wards.sort()
+        self.wards = sorted((d(w["arrive"]), w["ward"]) for w in raw["wards"])
         self.lines = [(d(l["insert"]), d(l["remove"]))
                       for l in raw["central_lines"]]
         self.cultures = [(d(c["date"]), c["source"], list(c["organisms"]))
@@ -90,7 +111,6 @@ class Admission(object):
             self.signs.setdefault(d(s["date"]), set()).update(s["elements"])
 
     def ward_on(self, day):
-        """The ward occupied on `day`, with its arrival date, or (None, None)."""
         if not (self.admit <= day <= self.discharge):
             return None, None
         cur = None
@@ -103,7 +123,6 @@ class Admission(object):
         return any(i <= day <= r for i, r in self.lines)
 
     def sign_dates(self, allowed, lo, hi):
-        """Dates in [lo, hi] carrying at least one of `allowed`."""
         return sorted(t for t, els in self.signs.items()
                       if lo <= t <= hi and (els & allowed))
 
@@ -116,172 +135,230 @@ def commensals(organisms):
     return sorted(o for o in organisms if o in COMMENSALS)
 
 
-def candidates(adm):
-    """Every candidate of one admission: (type, anchor, doe, organisms)."""
+def candidates(p, adm):
+    """(type, anchor, date of event, organisms) for one admission."""
     out = []
-
+    before = dt.timedelta(days=p.iwp_before)
+    after = dt.timedelta(days=p.iwp_after)
     for date, source, orgs in adm.cultures:
-        lo, hi = date - dt.timedelta(days=IWP_RADIUS), \
-            date + dt.timedelta(days=IWP_RADIUS)
+        found = pathogens(orgs)
+        if not found:
+            continue
         if source == "blood":
-            found = pathogens(orgs)
-            if found:
-                out.append(("BSI", date, date, found))
+            out.append(("BSI", date, date, found))
         else:
-            found = pathogens(orgs)
-            if not found:
-                continue
-            signs = adm.sign_dates(UTI_SIGNS, lo, hi)
+            signs = adm.sign_dates(UTI_SIGNS, date - before, date + after)
             if signs:
-                out.append(("UTI", date, min(date, signs[0]), found))
+                doe = date if p.doe_rule == "culture" else min(date, signs[0])
+                out.append(("UTI", date, doe, found))
 
-    # BSI-C: a matching commensal on two cultures a day apart at most
     blood = [(t, commensals(o)) for t, s, o in adm.cultures if s == "blood"]
     seen = set()
     for i, (t1, c1) in enumerate(blood):
         for t2, c2 in blood[i + 1:]:
-            if abs(days(t1, t2)) > 1:
+            if abs((t2 - t1).days) > p.commensal_gap:
                 continue
             for org in sorted(set(c1) & set(c2)):
                 anchor = min(t1, t2)
                 if (anchor, org) in seen:
                     continue
-                lo = anchor - dt.timedelta(days=IWP_RADIUS)
-                hi = anchor + dt.timedelta(days=IWP_RADIUS)
-                signs = adm.sign_dates(BSI_SIGNS, lo, hi)
+                signs = adm.sign_dates(BSI_SIGNS, anchor - before,
+                                       anchor + after)
                 if signs:
                     seen.add((anchor, org))
-                    out.append(("BSI", anchor, min(anchor, signs[0]), [org]))
+                    doe = anchor if p.doe_rule == "culture" \
+                        else min(anchor, signs[0])
+                    out.append(("BSI", anchor, doe, [org]))
     return out
 
 
-def line_associated(adm, doe):
-    for insert, remove in adm.lines:
-        if doe >= insert + dt.timedelta(days=2) and \
-                doe <= remove + dt.timedelta(days=1):
-            return True
-    return False
-
-
-def attribute(adm, doe):
-    """The ward the event is charged to, applying the transfer rule."""
-    arrive, ward = adm.ward_on(doe)
-    if ward is None:
-        return None
-    if arrive == doe or arrive == doe - dt.timedelta(days=1):
-        prev_arrive, prev_ward = adm.ward_on(arrive - dt.timedelta(days=1))
-        if prev_ward is not None:
-            return prev_ward
-    return ward
-
-
-def adjudicate(patient):
-    """The reportable events of one patient, in the manual's order."""
-    admissions = [Admission(a) for a in patient["admissions"]]
-
+def build_pool(p, admissions):
+    """Candidates surviving the admission-day cut, in adjudication order."""
     pool = []
     for adm in admissions:
-        for kind, anchor, doe, orgs in candidates(adm):
-            if doe < adm.admit:
-                continue                        # present on admission
-            if days(adm.admit, doe) + 1 < HAI_DAY:
-                continue                        # admission day 1 or 2
+        for kind, anchor, doe, orgs in candidates(p, adm):
+            if doe < adm.admit or (doe - adm.admit).days + 1 < p.hai_day:
+                continue
             pool.append({"kind": kind, "anchor": anchor, "doe": doe,
                          "organisms": list(orgs), "adm": adm})
-
-    pool.sort(key=lambda c: (c["doe"], c["anchor"],
-                             c["organisms"][0] if c["organisms"] else ""))
-
-    reported = {"UTI": [], "BSI": []}
-    open_rit = {"UTI": None, "BSI": None}       # (event, last day inside)
-
-    for kind in ("UTI", "BSI"):
-        for cand in [c for c in pool if c["kind"] == kind]:
-            if kind == "BSI":
-                host = secondary_host(reported["UTI"], cand)
-                if host is not None:
-                    merge(host, cand["organisms"])
-                    continue
-            rit = open_rit[kind]
-            if rit is not None and cand["doe"] <= rit[1]:
-                merge(rit[0], cand["organisms"])
-                continue
-            event = {"date_of_event": cand["doe"],
-                     "ward": attribute(cand["adm"], cand["doe"]),
-                     "organisms": sorted(set(cand["organisms"])),
-                     # kept for the secondary test: the attribution period runs
-                     # from the first day of the candidate's own window
-                     "iwp_start": cand["anchor"] - dt.timedelta(days=IWP_RADIUS),
-                     # the organisms this event was opened with, before any
-                     # merge -- §10 matches against the CURRENT list, not this,
-                     # and the difference decides real cases
-                     "seed": sorted(set(cand["organisms"]))}
-            if kind == "BSI":
-                event["central_line_associated"] = \
-                    line_associated(cand["adm"], cand["doe"])
-            reported[kind].append(event)
-            open_rit[kind] = (event,
-                              cand["doe"] + dt.timedelta(days=RIT_DAYS - 1))
-    return reported
+    pool.sort(key=lambda c: (c["doe"], c["anchor"], c["organisms"][0]))
+    return pool
 
 
-def merge(event, organisms):
-    event["organisms"] = sorted(set(event["organisms"]) | set(organisms))
-
-
-def secondary_host(utis, cand):
-    """The reported UTI that demotes this candidate, or None."""
+def secondary_host(p, utis, cand):
     for uti in utis:
-        end = uti["date_of_event"] + dt.timedelta(days=RIT_DAYS - 1)
-        if not (uti["iwp_start"] <= cand["anchor"] <= end):
-            continue
-        if set(cand["organisms"]) & set(uti["organisms"]):
+        start = uti["sec0"] if p.sec_start == "iwp" else uti["doe"]
+        end = start + dt.timedelta(days=p.sec_len - 1)
+        if start <= cand["anchor"] <= end and \
+                set(cand["organisms"]) & set(uti["organisms"]):
             return uti
     return None
 
 
-def line_days(doc):
-    counts = {w: 0 for w in doc["wards"]}
+def walk(p, pool):
+    """Which candidates are reported, and with which organisms."""
+    first = p.order
+    second = "BSI" if first == "UTI" else "UTI"
+    reported = {"UTI": [], "BSI": []}
+    open_rit = {"UTI": None, "BSI": None}
+
+    for kind in (first, second):
+        for cand in [c for c in pool if c["kind"] == kind]:
+            if kind == "BSI":
+                host = secondary_host(p, reported["UTI"], cand)
+                if host is not None:
+                    host["organisms"] = sorted(set(host["organisms"]) |
+                                               set(cand["organisms"]))
+                    continue
+            rit = open_rit[kind]
+            if rit is not None and cand["doe"] <= rit[1]:
+                rit[0]["organisms"] = sorted(set(rit[0]["organisms"]) |
+                                             set(cand["organisms"]))
+                continue
+            ev = {"doe": cand["doe"], "adm": cand["adm"],
+                  "organisms": sorted(set(cand["organisms"])),
+                  "sec0": cand["anchor"] - dt.timedelta(days=p.iwp_before)}
+            reported[kind].append(ev)
+            open_rit[kind] = (ev, cand["doe"] +
+                              dt.timedelta(days=p.rit_days - 1))
+    for kind in ("UTI", "BSI"):
+        reported[kind].sort(key=lambda e: e["doe"])
+    return reported
+
+
+def line_associated(p, adm, doe):
+    for insert, remove in adm.lines:
+        if doe >= insert + dt.timedelta(days=p.line_min_days - 1) and \
+                doe <= remove + dt.timedelta(days=p.line_grace):
+            return True
+    return False
+
+
+def attribute(p, adm, doe):
+    arrive, ward = adm.ward_on(doe)
+    if ward is None:
+        return None
+    if arrive is not None and (doe - arrive).days <= p.transfer_window:
+        _pa, prev = adm.ward_on(arrive - dt.timedelta(days=1))
+        if prev is not None:
+            return prev
+    return ward
+
+
+def dress(p, pid, reported):
+    """The reported events in the shipped answer shape."""
+    return {
+        "id": pid,
+        "uti": [{"date_of_event": iso(e["doe"]),
+                 "ward": attribute(p, e["adm"], e["doe"]),
+                 "organisms": e["organisms"]} for e in reported["UTI"]],
+        "bsi": [{"date_of_event": iso(e["doe"]),
+                 "ward": attribute(p, e["adm"], e["doe"]),
+                 "organisms": e["organisms"],
+                 "central_line_associated":
+                     line_associated(p, e["adm"], e["doe"])}
+                for e in reported["BSI"]],
+    }
+
+
+def report(p, patient):
+    admissions = [Admission(a) for a in patient["admissions"]]
+    return dress(p, patient["id"], walk(p, build_pool(p, admissions)))
+
+
+def skeleton(reported):
+    """Dates and organisms only -- everything the last three constants cannot
+    change. Comparing these first is what keeps the search cheap."""
+    return tuple((kind, tuple((iso(e["doe"]), tuple(e["organisms"]))
+                              for e in reported[kind]))
+                 for kind in ("UTI", "BSI"))
+
+
+def want_skeleton(a):
+    return tuple((kind.upper(),
+                  tuple((e["date_of_event"], tuple(e["organisms"]))
+                        for e in a[kind]))
+                 for kind in ("uti", "bsi"))
+
+
+def recover(audit):
+    """The one setting of the constants that reproduces the whole audit."""
+    want = {a["id"]: a for a in audit["adjudications"]}
+    order = sorted(audit["patients"],
+                   key=lambda p: -(len(want[p["id"]]["uti"]) +
+                                   len(want[p["id"]]["bsi"])))
+    admissions = {pt["id"]: [Admission(a) for a in pt["admissions"]]
+                  for pt in order}
+    want_skel = {pid: want_skeleton(a) for pid, a in want.items()}
+
+    found = []
+    for pool_combo in itertools.product(*(list(GRID[f]) for f in POOL_FIELDS)):
+        base = dict(zip(POOL_FIELDS, pool_combo))
+        stub = Params(order="UTI", rit_days=10, sec_start="iwp", sec_len=10,
+                      line_min_days=2, line_grace=0, transfer_window=0, **base)
+        pools = {pt["id"]: build_pool(stub, admissions[pt["id"]])
+                 for pt in order}
+
+        for walk_combo in itertools.product(*(list(GRID[f])
+                                              for f in WALK_FIELDS)):
+            mid = dict(base, **dict(zip(WALK_FIELDS, walk_combo)))
+            stub2 = Params(line_min_days=2, line_grace=0, transfer_window=0,
+                           **mid)
+            walks = {}
+            for pt in order:
+                w = walk(stub2, pools[pt["id"]])
+                if skeleton(w) != want_skel[pt["id"]]:
+                    walks = None
+                    break
+                walks[pt["id"]] = w
+            if walks is None:
+                continue
+
+            for trim_combo in itertools.product(*(list(GRID[f])
+                                                  for f in TRIM_FIELDS)):
+                p = Params(**dict(mid, **dict(zip(TRIM_FIELDS, trim_combo))))
+                for pt in order:
+                    if dress(p, pt["id"], walks[pt["id"]]) != want[pt["id"]]:
+                        break
+                else:
+                    found.append(p)
+    assert found, "no setting of the constants reproduces the audit"
+    assert len(found) == 1, "the audit leaves %d settings standing" % len(found)
+    return found[0]
+
+
+def line_days(p, doc, patients):
+    counts = dict((w, 0) for w in doc["wards"])
     lo, hi = d(doc["period_start"]), d(doc["period_end"])
-    for patient in doc["patients"]:
+    for patient in patients:
         for raw in patient["admissions"]:
             adm = Admission(raw)
             day = adm.admit
             while day <= adm.discharge:
                 if lo <= day < hi and adm.line_on(day):
-                    _arrive, ward = adm.ward_on(day)
-                    if ward is not None:
+                    _a, ward = adm.ward_on(day)
+                    if ward:
                         counts[ward] = counts.get(ward, 0) + 1
                 day += dt.timedelta(days=1)
     return counts
 
 
-def solve(doc):
-    patients = []
-    for patient in doc["patients"]:
-        rep = adjudicate(patient)
-        patients.append({
-            "id": patient["id"],
-            "uti": [{"date_of_event": iso(e["date_of_event"]),
-                     "ward": e["ward"], "organisms": e["organisms"]}
-                    for e in rep["UTI"]],
-            "bsi": [{"date_of_event": iso(e["date_of_event"]),
-                     "ward": e["ward"], "organisms": e["organisms"],
-                     "central_line_associated": e["central_line_associated"]}
-                    for e in rep["BSI"]],
-        })
-    counts = line_days(doc)
-    return {"patients": patients,
-            "central_line_days": [{"ward": w, "days": counts[w]}
-                                  for w in doc["wards"]]}
-
-
 def main():
+    with open(AUDIT_PATH) as f:
+        audit = json.load(f)
     with open(RECORDS_PATH) as f:
-        doc = json.load(f)
+        records = json.load(f)
+
+    p = recover(audit)
+    counts = line_days(p, records, records["patients"])
+    answer = {
+        "patients": [report(p, patient) for patient in records["patients"]],
+        "central_line_days": [{"ward": w, "days": counts[w]}
+                              for w in records["wards"]],
+    }
     tmp = RESULT_PATH + ".tmp"
     with open(tmp, "w") as f:
-        json.dump(solve(doc), f)
+        json.dump(answer, f)
         f.write("\n")
     os.replace(tmp, RESULT_PATH)
 
