@@ -13,12 +13,19 @@ after removal still counts, how close a ward transfer sends an event to the
 transferring ward, how far apart two commensal cultures may be drawn, and
 whether an event is dated by its earliest element or by its culture.
 
-They are recovered from audited.json -- a prior state audit whose adjudications
-were validated. Build the procedure with the constants left free, find the
-setting that reproduces every validated adjudication, apply it to the held-out
-quarter.
+They are recovered from audited.json -- a prior state audit. Build the procedure
+with the constants left free, find the setting the audit supports, apply it to
+the held-out quarter.
 
 Three things carry the work.
+
+0. The audit is not clean. A handful of its entries were mis-adjudicated by the
+   auditor and which ones is not recorded, so no setting reproduces all of it
+   and a search that demands one finds nothing at all. Worse is the search that
+   keeps relaxing a constant until the last stubborn entry fits: that lands on
+   a setting which explains somebody's slip and is wrong about every held-out
+   patient it touches. What is wanted is the setting with the highest
+   agreement, plus a check that it wins outright rather than ties.
 
 1. The fit has to be joint. The constants interact: the width of the window
    decides the date of event, and the date of event decides healthcare
@@ -281,17 +288,33 @@ def want_skeleton(a):
                  for kind in ("uti", "bsi"))
 
 
-def recover(audit):
-    """The one setting of the constants that reproduces the whole audit."""
+def recover(audit, max_wrong=5):
+    """The setting of the constants that explains the most of the audit.
+
+    Not "reproduces all of it": some entries are wrong, and which ones is not
+    recorded, so the fit has to be robust. Two things follow, and both matter.
+
+    A setting that reproduces every entry does not exist, so a search that
+    demands one finds nothing. And a search that instead relaxes a constant
+    until the last stubborn entry fits will land on a setting that explains a
+    corrupted row and gets the held-out quarter wrong -- which is exactly what
+    an auditor's slip looks like if you treat it as data. What is wanted is the
+    setting with the highest agreement, and a check that it wins outright.
+
+    The staged structure survives, with the early exit replaced by a bound: the
+    three constants that only decide an event's ward and line flag cannot lift
+    agreement above what the dates and organisms already allow, so any (pool,
+    walk) setting whose skeleton agreement is below the incumbent is skipped
+    whole.
+    """
     want = {a["id"]: a for a in audit["adjudications"]}
-    order = sorted(audit["patients"],
-                   key=lambda p: -(len(want[p["id"]]["uti"]) +
-                                   len(want[p["id"]]["bsi"])))
+    order = list(audit["patients"])
     admissions = {pt["id"]: [Admission(a) for a in pt["admissions"]]
                   for pt in order}
     want_skel = {pid: want_skeleton(a) for pid, a in want.items()}
+    floor = len(order) - max_wrong
 
-    found = []
+    best, found = floor, []
     for pool_combo in itertools.product(*(list(GRID[f]) for f in POOL_FIELDS)):
         base = dict(zip(POOL_FIELDS, pool_combo))
         stub = Params(order="UTI", rit_days=10, sec_start="iwp", sec_len=10,
@@ -304,26 +327,28 @@ def recover(audit):
             mid = dict(base, **dict(zip(WALK_FIELDS, walk_combo)))
             stub2 = Params(line_min_days=2, line_grace=0, transfer_window=0,
                            **mid)
-            walks = {}
+            walks, fits = {}, []
             for pt in order:
                 w = walk(stub2, pools[pt["id"]])
-                if skeleton(w) != want_skel[pt["id"]]:
-                    walks = None
-                    break
                 walks[pt["id"]] = w
-            if walks is None:
-                continue
+                if skeleton(w) == want_skel[pt["id"]]:
+                    fits.append(pt["id"])
+            if len(fits) < best:
+                continue                    # cannot reach the incumbent
 
             for trim_combo in itertools.product(*(list(GRID[f])
                                                   for f in TRIM_FIELDS)):
                 p = Params(**dict(mid, **dict(zip(TRIM_FIELDS, trim_combo))))
-                for pt in order:
-                    if dress(p, pt["id"], walks[pt["id"]]) != want[pt["id"]]:
-                        break
-                else:
+                agree = sum(1 for pid in fits
+                            if dress(p, pid, walks[pid]) == want[pid])
+                if agree > best:
+                    best, found = agree, [p]
+                elif agree == best and found:
                     found.append(p)
-    assert found, "no setting of the constants reproduces the audit"
-    assert len(found) == 1, "the audit leaves %d settings standing" % len(found)
+    assert found, ("no setting explains at least %d of the %d audit entries"
+                   % (floor, len(order)))
+    assert len(found) == 1, ("%d settings each explain %d entries; the audit "
+                             "does not single one out" % (len(found), best))
     return found[0]
 
 

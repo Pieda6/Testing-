@@ -1,8 +1,11 @@
 `/app/data/manual.md` defines which healthcare-associated infections are
 reportable — but the numbers in it have been redacted. `/app/data/audited.json`
 is a prior state audit: patients whose adjudications were produced under the
-complete manual and validated. `/app/data/records.json` is a held-out quarter
-with no adjudications.
+complete manual. `/app/data/records.json` is a held-out quarter with no
+adjudications.
+
+The audit was re-adjudicated by hand and **some of its entries are wrong** — at
+most five of the thirty-six. Which ones is not recorded.
 
 Recover what the manual is missing from the audit, then adjudicate the held-out
 quarter with it.
@@ -30,8 +33,8 @@ must be reported), and `patients`. Each patient is
 `{"date", "source", "organisms"}` where `source` is `blood` or `urine`), and
 `signs` (a list of `{"date", "elements"}`). All dates are `YYYY-MM-DD`.
 
-`audited.json` additionally carries `adjudications`: one validated entry per
-audit patient, in the output shape below. An entry reporting no events is as
+`audited.json` additionally carries `adjudications`: one entry per audit
+patient, in the output shape below. An entry reporting no events is as
 informative as one reporting several.
 
 The data is complete: a sign that is not listed was not recorded, and a culture

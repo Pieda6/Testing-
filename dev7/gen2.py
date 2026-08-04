@@ -213,6 +213,29 @@ def audit_patients():
     add(Adm("2026-01-10", "2026-01-30").w("W5A", "2026-01-10")
         .urine("2026-01-14", "Escherichia coli").sign("2026-01-11", "dysuria"))
 
+    # --- ordinary charts -------------------------------------------------
+    # These pin nothing the patients above do not already pin, which is what
+    # makes them the ones to corrupt: a wrong entry costs the fit no evidence,
+    # it only adds noise the recovery has to survive.
+    add(Adm("2026-01-06", "2026-01-26").w("W5A", "2026-01-06")
+        .blood("2026-01-12", "Serratia marcescens"))
+    add(Adm("2026-01-07", "2026-01-27").w("W3B", "2026-01-07")
+        .blood("2026-01-14", "Candida albicans"))
+    add(Adm("2026-01-08", "2026-01-28").w("W7C", "2026-01-08")
+        .urine("2026-01-15", "Escherichia coli").sign("2026-01-15", "fever"))
+    add(Adm("2026-01-09", "2026-01-29").w("SICU", "2026-01-09")
+        .blood("2026-01-16", "Enterococcus faecalis"))
+    add(Adm("2026-01-10", "2026-01-30").w("MICU", "2026-01-10")
+        .line("2026-01-10", "2026-01-28")
+        .blood("2026-01-18", "Klebsiella pneumoniae"))
+    add(Adm("2026-01-11", "2026-01-31").w("W5A", "2026-01-11")
+        .urine("2026-01-19", "Enterobacter cloacae")
+        .sign("2026-01-19", "urgency"))
+    add(Adm("2026-01-12", "2026-02-01").w("W3B", "2026-01-12")
+        .blood("2026-01-20", "Pseudomonas aeruginosa"))
+    add(Adm("2026-01-13", "2026-02-02").w("W7C", "2026-01-13")
+        .blood("2026-01-21", "Staphylococcus aureus"))
+
     return P
 
 
@@ -353,6 +376,60 @@ def held_out():
     return P
 
 
+# --- the audit is imperfect -------------------------------------------------
+# A state validation audit is re-adjudicated by hand and disagrees with the
+# hospital in both directions; inter-rater reliability on these definitions is
+# poor. So a few of the validated entries are wrong, and which ones is not
+# recorded. Each corruption below is the kind of slip a real auditor makes, and
+# each one mimics a DIFFERENT wrong constant -- so a solver that trusts the
+# audit will bend a constant to accommodate it and be wrong on the held-out
+# quarter, silently.
+# Each corruption must be inexplicable by ANY setting of the constants. A
+# transcription slip that happens to match what some wrong setting predicts is
+# not noise, it is evidence for that setting -- and it will pull the fit away
+# from the truth. So: a line association asserted for a patient who never had a
+# line, a ward the patient never occupied, an organism that appears in no
+# culture, a date no window can reach.
+# Two properties are required of every corruption, and getting either wrong
+# breaks the task. It must be INEXPLICABLE by any setting of the constants --
+# a slip that happens to match what some wrong setting predicts is not noise,
+# it is evidence for that setting. And it must fall on a chart that pins
+# nothing, because agreement is scored per patient: corrupt a discriminator and
+# its evidence is lost along with it.
+CORRUPTIONS = {
+    "AUD-029": ("flag", "bsi", 0, True),          # no line was ever in place
+    "AUD-031": ("ward", "uti", 0, "MICU"),        # never occupied that ward
+    "AUD-033": ("organism", "bsi", 0, "Proteus mirabilis"),   # never cultured
+    "AUD-036": ("shift", "bsi", 0, 5),            # outside every window
+}
+
+
+def corrupt(adjudications):
+    out = []
+    for a in adjudications:
+        rule = CORRUPTIONS.get(a["id"])
+        if rule is None:
+            out.append(a)
+            continue
+        kind, key, idx, val = rule
+        a = json.loads(json.dumps(a))
+        if not a[key] or idx >= len(a[key]):
+            raise AssertionError("%s has no %s[%d] to corrupt" % (a["id"], key, idx))
+        if kind == "shift":
+            d0 = dt.date.fromisoformat(a[key][idx]["date_of_event"])
+            a[key][idx]["date_of_event"] = iso(d0 + dt.timedelta(days=val))
+        elif kind == "drop":
+            a[key].pop(idx)
+        elif kind == "flag":
+            a[key][idx]["central_line_associated"] = val
+        elif kind == "ward":
+            a[key][idx]["ward"] = val
+        elif kind == "organism":
+            a[key][idx]["organisms"] = sorted(a[key][idx]["organisms"] + [val])
+        out.append(a)
+    return out
+
+
 def document(patients, prefix):
     return [{"id": "%s-%03d" % (prefix, i + 1),
              "admissions": [a.dump() for a in adms]}
@@ -366,7 +443,8 @@ def main():
     audit_doc = {
         "period_start": iso(PERIOD_START), "period_end": iso(PERIOD_END),
         "wards": WARDS, "patients": audit,
-        "adjudications": [params.report(params.TRUE, p) for p in audit],
+        "adjudications": corrupt([params.report(params.TRUE, p)
+                                  for p in audit]),
     }
     records_doc = {
         "period_start": iso(PERIOD_START), "period_end": iso(PERIOD_END),
@@ -378,10 +456,12 @@ def main():
             json.dump(doc, f, indent=1)
             f.write("\n")
 
+    clean = [params.report(params.TRUE, p) for p in audit]
+    wrong = sum(1 for a, b in zip(clean, audit_doc["adjudications"]) if a != b)
     n_ev = sum(len(a["uti"]) + len(a["bsi"])
                for a in audit_doc["adjudications"])
-    print("audit patients %d (%d validated events) | held-out patients %d"
-          % (len(audit), n_ev, len(heldout)))
+    print("audit patients %d (%d entries, %d of them wrong) | held-out %d"
+          % (len(audit), n_ev, wrong, len(heldout)))
 
 
 if __name__ == "__main__":

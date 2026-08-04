@@ -1,9 +1,9 @@
 # dynamo/hai-surveillance-adjudication
 
 A surveillance definitions manual with its twelve constants redacted, a prior
-state audit of 28 patients whose adjudications were validated under the
-complete manual, and a held-out quarter of 36 patients with none. Recover the
-constants from the audit, then adjudicate the held-out quarter with them.
+state audit of 36 patients — four of whose entries are wrong, and which ones is
+not recorded — and a held-out quarter of 36 patients with no adjudications.
+Recover the constants from the audit, then adjudicate the held-out quarter.
 
 The records are synthetic and generated deterministically from a fixed seed.
 There are no real records, no real identifiers, and nothing derived from a real
@@ -39,8 +39,12 @@ or `tests/`.
   reporting *no* event for a patient with a positive culture are what pin the
   admission-day cut and the window edges. A solver that studies only the entries
   reporting events pins almost nothing.
-- **Nothing checks the fit on the held-out quarter.** A setting that reproduces
-  the whole audit and is still wrong produces a complete, coherent, plausible
+- **The audit is not clean.** No setting reproduces all of it, so a search that
+  demands consistency finds nothing — and one that relaxes a constant until the
+  last stubborn entry fits lands on a setting explaining somebody's slip. The
+  recovery has to score agreement and check the winner wins outright.
+- **Nothing checks the fit on the held-out quarter.** A setting that explains
+  the audit and is still wrong produces a complete, coherent, plausible
   adjudication that no part of the data contradicts.
 - **The constants are not the familiar ones.** Two of them differ from what any
   well-known surveillance system uses, and the instruction says so — filling
@@ -53,14 +57,26 @@ open. Twelve values are missing in all.
 ## Well-posedness
 
 The load-bearing check. A grid of **4,811,400 settings**, wider than the truth
-in every direction, exhausted against the audit: **exactly one** reproduces all
-28 validated adjudications, and it is the setting the data was generated from.
+in every direction, exhausted against the audit: **exactly one** explains the
+most entries — 32 of 36 — and it is the setting the data was generated from,
+with every other setting strictly behind.
 
-The first sweep found *two* survivors, differing in where the attribution period
-opens — that discriminator had been built with its sign exactly at the window
-edge, which makes the two readings land on the same day. A patient was added
-whose sign sits one day inside, with a blood culture in the resulting gap. The
-re-run leaves one.
+Two earlier sweeps were rejected by this check before anything shipped.
+
+The first left *two* survivors differing in where the attribution period opens:
+that discriminator had its sign exactly at the window edge, where both readings
+land on the same day. Fixed by a patient whose sign sits one day inside, with a
+blood culture in the resulting gap.
+
+The second showed why the audit's errors must be *chosen*. A mis-recorded line
+flag and a ward charged to the receiving unit are exactly what `line_grace=0`
+and `transfer_window=0` predict — so that wrong setting explained 26 entries and
+beat the truth's 24. An error a wrong setting can explain is not noise; it is
+evidence for that setting. Every corruption now shipped is inexplicable under
+*any* setting — a line association asserted for a patient who never had a line,
+a ward never occupied, an organism never cultured, a date no window can reach —
+and each falls on a chart that pins no constant, since agreement is scored per
+patient and corrupting a discriminator destroys its evidence too.
 
 The held-out quarter was then checked to exercise every constant: each of the 21
 single-constant perturbations changes the answer for at least one held-out
