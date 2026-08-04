@@ -29,19 +29,6 @@ not diagnosis or treatment.
 reaches the agent image, and `environment/Dockerfile` never copies `solution/`
 or `tests/`.
 
-## Why v1 failed, and what changed
-
-v1 shipped the manual complete and asked for correct execution. Pass@2 solved it
-twice at reward 1.0. The two tasks in this repo that cleared every gate --
-`dynamo/legacy-tag-forge` and `dynamo/headerless-pcm-normalize` -- share a
-different shape: the rule is withheld, has to be recovered from examples, and is
-then applied to held-out cases where nothing can check the recovery. Intricacy
-of a *given* specification was never going to bite, because the agent writes a
-program from the spec rather than hand-executing it.
-
-So the manual is redacted. Twelve constants come out, marked `[[?]]` in the
-text, and §5, §8 and §10 each name two possibilities and leave the choice open.
-
 ## What makes it hard
 
 - **The fit is joint, not separable.** The width of the window decides the date
@@ -57,7 +44,11 @@ text, and §5, §8 and §10 each name two possibilities and leave the choice ope
   adjudication that no part of the data contradicts.
 - **The constants are not the familiar ones.** Two of them differ from what any
   well-known surveillance system uses, and the instruction says so — filling
-  them in from memory costs a patient.
+  them in from memory instead of recovering them costs a patient.
+
+The manual ships in the container with its structure intact and its numbers
+marked `[[?]]`; §5, §8 and §10 each name two possibilities and leave the choice
+open. Twelve values are missing in all.
 
 ## Well-posedness
 
@@ -83,8 +74,7 @@ Lives in `dev7/`, outside this directory:
     gen2.py       generator: the audit set (boundaries hand-placed) and held-out
     fit.py        exhausts the 4.8M grid; proves the audit pins one setting
     controls2.py  scores each mis-recovered constant on the held-out quarter
-    harness.py    runs the real verifier against the oracle and wrong answers
-    gen.py, brute.py, validate.py, controls.py   v1, kept for reference
+    harness.py    runs the verifier against the oracle and against wrong answers
 
 ## Measured
 
@@ -94,7 +84,7 @@ Lives in `dev7/`, outside this directory:
     schema and single-determination faults      0
 
 One constant recovered wrongly, by held-out patients still fully correct out of
-36 (all-or-nothing grading means every row scores 0):
+36. Grading is all-or-nothing, so every row below scores zero:
 
     events dated by the anchor, not the earliest element   27
     bloodstream adjudicated first                          32
