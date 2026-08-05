@@ -8,6 +8,10 @@ line-associated. No patient, no date, no organism, no worked adjudication.
 **A few of the published numbers are wrong** — at most four of the forty-five.
 Which ones is not recorded.
 
+The table still fixes the answer: exactly one setting of the twelve values
+reproduces more of it than any other setting does, so take the setting with the
+highest agreement and check that it wins outright rather than ties.
+
 Recover what the manual is missing from that summary, then adjudicate the
 held-out quarter in `/app/data/records.json` with it.
 

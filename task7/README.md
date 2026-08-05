@@ -43,8 +43,8 @@ or `tests/`.
   allows.
 - **The constants are not the familiar ones.** Ten of the twelve differ from the
   values the well-known national definitions use. A solver that fills all twelve
-  in from memory gets **28 of the 49** held-out patients right and misses 31 of
-  the 45 published numbers.
+  in from memory gets **28 of the 49** held-out patients right and reproduces
+  only 11 of the 45 published numbers, against the recovered setting's 42.
 - **The search has to be framed.** The grid holding the answer has
   **148,500,000** settings. Staged by what each constant can reach — five decide
   which candidates exist, four decide which are reported and when, three decide
