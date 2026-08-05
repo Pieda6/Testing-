@@ -83,4 +83,4 @@ Your submission is correct when both of the following hold:
 2. Every determination is right: each reportable event present with the correct
    date of event, ward and organisms, nothing reported that is not reportable,
    central line association correct, and every ward's central line day count
-   correct. All forty-seven patients and all ward counts must be right.
+   correct. All forty-nine patients and all ward counts must be right.
