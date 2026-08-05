@@ -1412,7 +1412,7 @@
        "date": "2026-03-08",
        "source": "urine",
        "organisms": [
-        "Candida albicans"
+        "Enterobacter cloacae"
        ]
       },
       {
@@ -1692,7 +1692,7 @@
        "date": "2026-03-18",
        "source": "urine",
        "organisms": [
-        "Candida albicans"
+        "Enterobacter cloacae"
        ]
       },
       {
@@ -2018,6 +2018,81 @@
        "date": "2026-03-14",
        "elements": [
         "fever"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "PT-048",
+   "admissions": [
+    {
+     "admit": "2026-03-05",
+     "discharge": "2026-03-27",
+     "wards": [
+      {
+       "ward": "W5A",
+       "arrive": "2026-03-05"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-03-13",
+       "source": "blood",
+       "organisms": [
+        "Enterococcus faecalis"
+       ]
+      },
+      {
+       "date": "2026-03-17",
+       "source": "blood",
+       "organisms": [
+        "Corynebacterium species",
+        "Enterobacter cloacae",
+        "Klebsiella pneumoniae"
+       ]
+      }
+     ],
+     "signs": []
+    }
+   ]
+  },
+  {
+   "id": "PT-049",
+   "admissions": [
+    {
+     "admit": "2026-03-06",
+     "discharge": "2026-03-28",
+     "wards": [
+      {
+       "ward": "W3B",
+       "arrive": "2026-03-06"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-03-15",
+       "source": "blood",
+       "organisms": [
+        "Pseudomonas aeruginosa"
+       ]
+      },
+      {
+       "date": "2026-03-18",
+       "source": "urine",
+       "organisms": [
+        "Candida albicans"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-03-18",
+       "elements": [
+        "dysuria"
        ]
       }
      ]
