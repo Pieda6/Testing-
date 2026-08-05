@@ -415,8 +415,9 @@ def main():
 
     t0 = time.time()
     best, winners, scored, total = sweep(audit_doc, cells, total - 8)
+    winners = sorted(set(winners))          # the seed reappears when reached
     print("swept in %.0fs (%d settings scored past the bound); best %d of %d "
-          "cells; settings achieving it: %d"
+          "numbers; settings achieving it: %d"
           % (time.time() - t0, scored, best, total, len(winners)))
     for x in winners[:4]:
         print("   ", x)
