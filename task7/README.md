@@ -141,6 +141,7 @@ Lives in `dev7/`, outside this directory:
     oracle                                      1.0, byte-identical across re-runs
     no file / empty / nothing reported          0
     all denominators zero / symlinked answer    0
+    symlinked answer key                        0
     schema and single-determination faults      0
 
 One constant recovered wrongly, by held-out patients still fully correct out of

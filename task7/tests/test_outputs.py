@@ -38,21 +38,29 @@ ID_RE = re.compile(r"\APT-\d{3}\Z")
 DATE_RE = re.compile(r"\A\d{4}-\d{2}-\d{2}\Z")
 
 
-def _read_result():
-    """Read /app/answer.json, refusing to follow a symlink at the final path
-    component (O_NOFOLLOW anti-alias guard)."""
-    fd = os.open(RESULT_PATH, os.O_RDONLY | os.O_NOFOLLOW)
+def _read_json(path):
+    """Read JSON, refusing to follow a symlink at the final path component.
+
+    Used for both files the verifier reads. For /app/answer.json it stops the
+    agent aliasing its own result onto some other file. For expected.json it
+    costs nothing and closes the same trick in the other direction, in case
+    anything ever gets write access where the key is overlaid."""
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
     try:
-        with os.fdopen(fd, "r") as f:
-            return json.load(f)
-    except OSError:
+        f = os.fdopen(fd, "r")
+    except Exception:
         os.close(fd)
         raise
+    with f:                       # closes the descriptor exactly once
+        return json.load(f)
+
+
+def _read_result():
+    return _read_json(RESULT_PATH)
 
 
 def _key():
-    with open(EXPECTED_PATH) as f:
-        return json.load(f)
+    return _read_json(EXPECTED_PATH)
 
 
 def _is_int(x):
