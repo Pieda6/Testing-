@@ -35,7 +35,7 @@ ENVS = {
     "B": dict(root="/tmp/rb/b", sub="srv/releases/ci/workspace/greet",
               when="2028-07-19 22:41:05", mtime="2028-07-01 00:00:00",
               lang="en_US.UTF-8", tz="Asia/Tokyo", umask="002",
-              user="bob", host="rebuilder-b", order="reverse", uid=1000),
+              user="bob", host="rebuilder-b", order="reverse", uid=1001),
 }
 
 

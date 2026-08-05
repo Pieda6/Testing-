@@ -1,0 +1,14 @@
+# Only environment/project is needed in the build context. Nothing else here
+# should ever reach the image, and solution/ and tests/ live outside this
+# directory. The build/, stage/ and dist/ entries keep a developer's local
+# build outputs from being baked in — the agent must start from a clean tree.
+*
+!project
+!project/**
+project/build
+project/build/**
+project/stage
+project/stage/**
+project/dist
+project/dist/**
+project/src/buildinfo.h
