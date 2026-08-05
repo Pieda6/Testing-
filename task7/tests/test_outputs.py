@@ -14,13 +14,13 @@ that directory is writable by the agent.
 The key was established by two adjudicators that share no code and were written
 the other way round -- one over date intervals with a candidate pool, one over
 explicit per-calendar-day tables -- both derived from the shipped manual rather
-than from each other. They agree on all 36 patients and on every ward's central
+than from each other. They agree on all 47 patients and on every ward's central
 line day count. That agreement is the whole basis for trusting the key: unlike a
 task where a recovered model can be replayed against its own source data, an
 adjudication has no self-consistency test, so a single implementation's output
 would be nothing more than one implementation's opinion.
 
-Grading is all-or-nothing across all 36 patients and all ward denominators.
+Grading is all-or-nothing across all 47 patients and all ward denominators.
 """
 import json
 import os

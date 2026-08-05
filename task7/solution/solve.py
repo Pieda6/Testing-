@@ -47,12 +47,15 @@ Three things carry the work.
    a complete, coherent, plausible adjudication that nothing in the data
    contradicts. That is where this task is decided.
 
-The search is exhaustive over a generous grid, but staged so the expensive part
-is not repeated. Only five of the constants change which candidates exist at
-all, so the candidate pools are built once per setting of those five. Three
-more affect only the ward and the line flag of an event that is already
-decided, so they are tried last and only for settings whose reported events
-already match. The adjudication walk is what is left in the middle.
+The search is exhaustive over a generous grid, but the grid holds 148,500,000
+settings and walking it patient by patient is far outside the budget, so it is
+staged and the expensive part is not repeated. Only five of the constants change
+which candidates exist at all, so the candidate pools are built once per setting
+of those five. Three more affect only the ward and the line flag of an event
+that is already decided, so they are tried last and only for settings whose
+reported events already match. The adjudication walk is what is left in the
+middle. That collapses the work to 1,188,000 pool-and-walk settings, of which
+the bound below leaves only a few thousand to score in full.
 """
 import collections
 import datetime as dt
@@ -77,18 +80,18 @@ WALK_FIELDS = ("order", "rit_days", "sec_start", "sec_len")
 TRIM_FIELDS = ("line_min_days", "line_grace", "transfer_window")
 
 GRID = {
-    "iwp_before": range(1, 6),
-    "iwp_after": range(1, 6),
-    "commensal_gap": range(0, 3),
+    "iwp_before": range(1, 7),
+    "iwp_after": range(1, 7),
+    "commensal_gap": range(0, 5),
     "doe_rule": ["earliest", "culture"],
-    "hai_day": range(2, 5),
+    "hai_day": range(2, 7),
     "order": ["UTI", "BSI"],
-    "rit_days": range(10, 19),
+    "rit_days": range(9, 20),
     "sec_start": ["iwp", "doe"],
-    "sec_len": range(10, 21),
-    "line_min_days": range(2, 5),
-    "line_grace": range(0, 3),
-    "transfer_window": range(0, 3),
+    "sec_len": range(10, 25),
+    "line_min_days": range(2, 7),
+    "line_grace": range(0, 5),
+    "transfer_window": range(0, 5),
 }
 
 COMMENSALS = frozenset([

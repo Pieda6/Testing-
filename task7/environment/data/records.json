@@ -1389,6 +1389,640 @@
      ]
     }
    ]
+  },
+  {
+   "id": "PT-037",
+   "admissions": [
+    {
+     "admit": "2026-03-01",
+     "discharge": "2026-03-26",
+     "wards": [
+      {
+       "ward": "SICU",
+       "arrive": "2026-03-01"
+      },
+      {
+       "ward": "W7C",
+       "arrive": "2026-03-02"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-03-08",
+       "source": "urine",
+       "organisms": [
+        "Candida albicans"
+       ]
+      },
+      {
+       "date": "2026-03-14",
+       "source": "urine",
+       "organisms": [
+        "Enterococcus faecalis"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-03-04",
+       "elements": [
+        "dysuria"
+       ]
+      },
+      {
+       "date": "2026-03-14",
+       "elements": [
+        "dysuria"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "PT-038",
+   "admissions": [
+    {
+     "admit": "2026-03-02",
+     "discharge": "2026-03-26",
+     "wards": [
+      {
+       "ward": "W7C",
+       "arrive": "2026-03-02"
+      },
+      {
+       "ward": "MICU",
+       "arrive": "2026-03-04"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-03-07",
+       "source": "urine",
+       "organisms": [
+        "Pseudomonas aeruginosa"
+       ]
+      },
+      {
+       "date": "2026-03-18",
+       "source": "urine",
+       "organisms": [
+        "Escherichia coli"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-03-02",
+       "elements": [
+        "urgency"
+       ]
+      },
+      {
+       "date": "2026-03-09",
+       "elements": [
+        "costovertebral_tenderness"
+       ]
+      },
+      {
+       "date": "2026-03-18",
+       "elements": [
+        "dysuria"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "PT-039",
+   "admissions": [
+    {
+     "admit": "2026-03-03",
+     "discharge": "2026-03-27",
+     "wards": [
+      {
+       "ward": "MICU",
+       "arrive": "2026-03-03"
+      },
+      {
+       "ward": "W3B",
+       "arrive": "2026-03-07"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-03-09",
+       "source": "urine",
+       "organisms": [
+        "Enterococcus faecalis"
+       ]
+      },
+      {
+       "date": "2026-03-19",
+       "source": "urine",
+       "organisms": [
+        "Staphylococcus aureus"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-03-11",
+       "elements": [
+        "costovertebral_tenderness"
+       ]
+      },
+      {
+       "date": "2026-03-19",
+       "elements": [
+        "dysuria"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "PT-040",
+   "admissions": [
+    {
+     "admit": "2026-03-04",
+     "discharge": "2026-03-28",
+     "wards": [
+      {
+       "ward": "W3B",
+       "arrive": "2026-03-04"
+      },
+      {
+       "ward": "W5A",
+       "arrive": "2026-03-14"
+      }
+     ],
+     "central_lines": [],
+     "cultures": [
+      {
+       "date": "2026-03-10",
+       "source": "urine",
+       "organisms": [
+        "Staphylococcus aureus"
+       ]
+      },
+      {
+       "date": "2026-03-16",
+       "source": "urine",
+       "organisms": [
+        "Enterobacter cloacae"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-03-06",
+       "elements": [
+        "dysuria"
+       ]
+      },
+      {
+       "date": "2026-03-16",
+       "elements": [
+        "dysuria"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "PT-041",
+   "admissions": [
+    {
+     "admit": "2026-03-01",
+     "discharge": "2026-04-03",
+     "wards": [
+      {
+       "ward": "W5A",
+       "arrive": "2026-03-01"
+      },
+      {
+       "ward": "SICU",
+       "arrive": "2026-03-05"
+      }
+     ],
+     "central_lines": [
+      {
+       "insert": "2026-03-23",
+       "remove": "2026-03-24"
+      }
+     ],
+     "cultures": [
+      {
+       "date": "2026-03-07",
+       "source": "urine",
+       "organisms": [
+        "Enterobacter cloacae"
+       ]
+      },
+      {
+       "date": "2026-03-17",
+       "source": "urine",
+       "organisms": [
+        "Klebsiella pneumoniae"
+       ]
+      },
+      {
+       "date": "2026-03-26",
+       "source": "blood",
+       "organisms": [
+        "Enterobacter cloacae"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-03-07",
+       "elements": [
+        "dysuria"
+       ]
+      },
+      {
+       "date": "2026-03-17",
+       "elements": [
+        "urgency"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "PT-042",
+   "admissions": [
+    {
+     "admit": "2026-03-02",
+     "discharge": "2026-04-04",
+     "wards": [
+      {
+       "ward": "MICU",
+       "arrive": "2026-03-02"
+      },
+      {
+       "ward": "W7C",
+       "arrive": "2026-03-04"
+      }
+     ],
+     "central_lines": [
+      {
+       "insert": "2026-03-24",
+       "remove": "2026-03-24"
+      }
+     ],
+     "cultures": [
+      {
+       "date": "2026-03-07",
+       "source": "urine",
+       "organisms": [
+        "Serratia marcescens"
+       ]
+      },
+      {
+       "date": "2026-03-18",
+       "source": "urine",
+       "organisms": [
+        "Candida albicans"
+       ]
+      },
+      {
+       "date": "2026-03-27",
+       "source": "blood",
+       "organisms": [
+        "Serratia marcescens"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-03-07",
+       "elements": [
+        "dysuria"
+       ]
+      },
+      {
+       "date": "2026-03-18",
+       "elements": [
+        "urgency"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "PT-043",
+   "admissions": [
+    {
+     "admit": "2026-03-03",
+     "discharge": "2026-03-27",
+     "wards": [
+      {
+       "ward": "W3B",
+       "arrive": "2026-03-03"
+      },
+      {
+       "ward": "MICU",
+       "arrive": "2026-03-07"
+      }
+     ],
+     "central_lines": [
+      {
+       "insert": "2026-03-04",
+       "remove": "2026-03-04"
+      }
+     ],
+     "cultures": [
+      {
+       "date": "2026-03-07",
+       "source": "blood",
+       "organisms": [
+        "Klebsiella pneumoniae"
+       ]
+      },
+      {
+       "date": "2026-03-09",
+       "source": "urine",
+       "organisms": [
+        "Klebsiella pneumoniae"
+       ]
+      },
+      {
+       "date": "2026-03-19",
+       "source": "urine",
+       "organisms": [
+        "Pseudomonas aeruginosa"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-03-09",
+       "elements": [
+        "dysuria"
+       ]
+      },
+      {
+       "date": "2026-03-19",
+       "elements": [
+        "urgency"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "PT-044",
+   "admissions": [
+    {
+     "admit": "2026-03-01",
+     "discharge": "2026-03-24",
+     "wards": [
+      {
+       "ward": "SICU",
+       "arrive": "2026-03-01"
+      },
+      {
+       "ward": "W3B",
+       "arrive": "2026-03-02"
+      }
+     ],
+     "central_lines": [
+      {
+       "insert": "2026-03-01",
+       "remove": "2026-03-02"
+      }
+     ],
+     "cultures": [
+      {
+       "date": "2026-03-08",
+       "source": "blood",
+       "organisms": [
+        "Bacillus species"
+       ]
+      },
+      {
+       "date": "2026-03-10",
+       "source": "blood",
+       "organisms": [
+        "Bacillus species"
+       ]
+      },
+      {
+       "date": "2026-03-14",
+       "source": "blood",
+       "organisms": [
+        "Serratia marcescens"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-03-04",
+       "elements": [
+        "chills"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "PT-045",
+   "admissions": [
+    {
+     "admit": "2026-03-02",
+     "discharge": "2026-03-26",
+     "wards": [
+      {
+       "ward": "W5A",
+       "arrive": "2026-03-02"
+      },
+      {
+       "ward": "W7C",
+       "arrive": "2026-03-17"
+      }
+     ],
+     "central_lines": [
+      {
+       "insert": "2026-03-17",
+       "remove": "2026-03-18"
+      }
+     ],
+     "cultures": [
+      {
+       "date": "2026-03-09",
+       "source": "blood",
+       "organisms": [
+        "Cutibacterium acnes"
+       ]
+      },
+      {
+       "date": "2026-03-12",
+       "source": "blood",
+       "organisms": [
+        "Cutibacterium acnes"
+       ]
+      },
+      {
+       "date": "2026-03-20",
+       "source": "blood",
+       "organisms": [
+        "Escherichia coli"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-03-05",
+       "elements": [
+        "chills"
+       ]
+      },
+      {
+       "date": "2026-03-11",
+       "elements": [
+        "fever"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "PT-046",
+   "admissions": [
+    {
+     "admit": "2026-03-03",
+     "discharge": "2026-03-24",
+     "wards": [
+      {
+       "ward": "W7C",
+       "arrive": "2026-03-03"
+      },
+      {
+       "ward": "SICU",
+       "arrive": "2026-03-06"
+      }
+     ],
+     "central_lines": [
+      {
+       "insert": "2026-03-06",
+       "remove": "2026-03-06"
+      }
+     ],
+     "cultures": [
+      {
+       "date": "2026-03-08",
+       "source": "blood",
+       "organisms": [
+        "Staphylococcus epidermidis"
+       ]
+      },
+      {
+       "date": "2026-03-10",
+       "source": "blood",
+       "organisms": [
+        "Staphylococcus epidermidis"
+       ]
+      },
+      {
+       "date": "2026-03-18",
+       "source": "blood",
+       "organisms": [
+        "Candida albicans"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-03-03",
+       "elements": [
+        "hypotension"
+       ]
+      },
+      {
+       "date": "2026-03-10",
+       "elements": [
+        "fever"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "PT-047",
+   "admissions": [
+    {
+     "admit": "2026-03-04",
+     "discharge": "2026-03-28",
+     "wards": [
+      {
+       "ward": "MICU",
+       "arrive": "2026-03-04"
+      },
+      {
+       "ward": "W5A",
+       "arrive": "2026-03-05"
+      }
+     ],
+     "central_lines": [
+      {
+       "insert": "2026-03-04",
+       "remove": "2026-03-04"
+      }
+     ],
+     "cultures": [
+      {
+       "date": "2026-03-11",
+       "source": "blood",
+       "organisms": [
+        "Corynebacterium species"
+       ]
+      },
+      {
+       "date": "2026-03-13",
+       "source": "blood",
+       "organisms": [
+        "Corynebacterium species"
+       ]
+      },
+      {
+       "date": "2026-03-18",
+       "source": "blood",
+       "organisms": [
+        "Staphylococcus aureus"
+       ]
+      }
+     ],
+     "signs": [
+      {
+       "date": "2026-03-07",
+       "elements": [
+        "chills"
+       ]
+      },
+      {
+       "date": "2026-03-14",
+       "elements": [
+        "fever"
+       ]
+      }
+     ]
+    }
+   ]
   }
  ]
 }

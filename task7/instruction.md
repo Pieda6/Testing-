@@ -8,9 +8,7 @@ The audit was re-adjudicated by hand and **some of its entries are wrong** — a
 most five of the thirty-nine. Which ones is not recorded.
 
 Recover what the manual is missing from the audit, then adjudicate the held-out
-quarter with it. No two audit patients differ in a single element, and every one
-of them turns on several of the withheld values at once, so nothing can be read
-off a comparison of two of them: the fit is joint and has to be searched as one.
+quarter with it.
 
 All records are synthetic. No part of them comes from a real person.
 
@@ -21,8 +19,9 @@ constants**. Every withheld value is marked `[[?]]`, and §5, §8 and §10 each
 name two possibilities and leave the choice open. Twelve values are missing in
 all. Read it in full and apply exactly what it says. Where it differs from any
 surveillance manual you already know — and it does — the shipped excerpt
-governs; several of its constants are not the familiar ones, so recover them
-rather than assuming them.
+governs. **Most of its constants are not the familiar ones**: ten of the twelve
+differ from the values the well-known national definitions use, so they have to
+be recovered rather than assumed.
 
 ## The input
 
@@ -81,4 +80,4 @@ Your submission is correct when both of the following hold:
 2. Every determination is right: each reportable event present with the correct
    date of event, ward and organisms, nothing reported that is not reportable,
    central line association correct, and every ward's central line day count
-   correct. All thirty-six patients and all ward counts must be right.
+   correct. All forty-seven patients and all ward counts must be right.
