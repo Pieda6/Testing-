@@ -1,14 +1,15 @@
 `/app/data/manual.md` defines which healthcare-associated infections are
 reportable — but the numbers in it have been redacted. `/app/data/audited.json`
-is a prior state audit: patients whose adjudications were produced under the
-complete manual. `/app/data/records.json` is a held-out quarter with no
-adjudications.
+is a prior quarter: 59 admissions, and the summary the programme published for
+them under the complete manual. It publishes counts only — per ward, per month,
+how many urinary events, how many bloodstream events, how many of those were
+line-associated. No patient, no date, no organism, no worked adjudication.
 
-The audit was re-adjudicated by hand and **some of its entries are wrong** — at
-most five of the thirty-nine. Which ones is not recorded.
+**A few of the published numbers are wrong** — at most four of the forty-five.
+Which ones is not recorded.
 
-Recover what the manual is missing from the audit, then adjudicate the held-out
-quarter with it.
+Recover what the manual is missing from that summary, then adjudicate the
+held-out quarter in `/app/data/records.json` with it.
 
 All records are synthetic. No part of them comes from a real person.
 
@@ -34,9 +35,11 @@ must be reported), and `patients`. Each patient is
 `{"date", "source", "organisms"}` where `source` is `blood` or `urine`), and
 `signs` (a list of `{"date", "elements"}`). All dates are `YYYY-MM-DD`.
 
-`audited.json` additionally carries `adjudications`: one entry per audit
-patient, in the output shape below. An entry reporting fewer events than the
-cultures suggest is as informative as one reporting several.
+`audited.json` additionally carries `summary` — one entry per ward per month,
+`{"ward", "month", "uti_events", "bsi_events", "central_line_associated"}`, with
+`month` as `YYYY-MM` — and `central_line_days`. §13 of the manual says exactly
+what those counts are over. A cell that is lower than the cultures suggest is as
+informative as one that is high.
 
 The data is complete: a sign that is not listed was not recorded, and a culture
 that is not listed was not taken.

@@ -78,6 +78,16 @@ def day(base, n):
     return base + dt.timedelta(days=n)
 
 
+def urinary(org, avoid=None):
+    """Yeasts are recognised pathogens in blood and not eligible for a urinary
+    event, so a chart that needs a reportable UTI cannot use one. Substitute the
+    first name that is neither a yeast nor the organism it has to differ from."""
+    if org not in solve.YEASTS:
+        return org
+    return next(o for o in PATHOGENS
+                if o not in solve.YEASTS and o != avoid)
+
+
 def doe_of(adm, kind, fallback):
     """Date of event the true constants give the first candidate of a kind.
 
@@ -99,6 +109,7 @@ def tpl_uti(admit, doe_off, back, fwd, tw_off, rep_off, o1, o2, w1, w2,
     timeframe. Touches both window widths, the dating rule, the admission cut,
     the transfer window and the timeframe: six constants, one outcome."""
     A = d(admit)
+    o1, o2 = urinary(o1, o2), urinary(o2, o1)
     m = doe_off + (back if (back is not None and back <= B) else 0)
     c = day(A, m)
     a = Adm(iso(A), iso(day(A, m + max(rep_off or 0, 0) + 8)))
@@ -131,6 +142,7 @@ def tpl_sec(admit, m, blood_off, line_ins, line_rem, tw_off, rep_off,
     how long it runs, both line constants, the transfer window, the timeframe
     and the window reaching back."""
     A = d(admit)
+    o1, o2 = urinary(o1, o2), urinary(o2, o1)
     c = day(A, m)
     a = Adm(iso(A), iso(day(A, m + max(blood_off, rep_off or 0, 0) + 8)))
     a.w(w1, iso(A))

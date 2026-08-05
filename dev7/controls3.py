@@ -48,13 +48,16 @@ def main():
         records = json.load(f)
     with open(os.path.join(gen5.DATA, "audited.json")) as f:
         audit = json.load(f)
-    want = {a["id"]: a for a in audit["adjudications"]}
+    published = audit["summary"]
+    fields = ("uti_events", "bsi_events", "central_line_associated")
     pts = records["patients"]
     n = len(pts)
 
     def audit_score(p):
-        return sum(1 for a in audit["patients"]
-                   if solve.report(p, a) == want[a["id"]])
+        got = {(c["ward"], c["month"]): c for c in solve.summary(
+            audit, [solve.report(p, a) for a in audit["patients"]])}
+        return sum(1 for c in published for f in fields
+                   if got[(c["ward"], c["month"])][f] == c[f])
 
     def held_score(p):
         right = sum(1 for a in pts if solve.report(p, a) == solve.report(TRUE, a))
@@ -63,8 +66,8 @@ def main():
         return right, counts == true_counts
 
     base = audit_score(TRUE)
-    print("the recovered setting explains %d of %d audit entries\n"
-          % (base, len(audit["patients"])))
+    print("the recovered setting matches %d of the %d published numbers\n"
+          % (base, 3 * len(published)))
     print("  %-52s %-14s %s" % ("", "audit", "held-out"))
     r, dens = held_score(TRUE)
     print("  %-52s %-14s %d / %d%s"
@@ -93,10 +96,12 @@ def main():
 
     ties = [row for row in rows if row[2] >= base]
     if ties:
-        print("\nNOT WELL POSED -- %d wrong setting(s) match the audit" % len(ties))
+        print("\nNOT WELL POSED -- %d wrong setting(s) match the summary"
+              % len(ties))
         return 1
     worst = max(r for r, _l, _a, _d in rows)
-    print("\nevery single-constant error loses on the audit and costs at least "
+    print("\nevery single-constant error loses on the summary and costs at "
+          "least "
           "%d of the %d held-out patients" % (n - worst, n))
     return 0
 

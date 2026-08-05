@@ -98,6 +98,8 @@ COMMENSALS = frozenset([
     "Bacillus species", "Corynebacterium species", "Cutibacterium acnes",
     "Micrococcus species", "Staphylococcus epidermidis",
 ])
+YEASTS = frozenset(["Candida albicans", "Candida glabrata"])
+CONTAM_MIN = 3          # a blood culture growing this many names is disregarded
 BSI_SIGNS = frozenset(["fever", "chills", "hypotension"])
 UTI_SIGNS = frozenset(["fever", "dysuria", "urgency", "suprapubic_tenderness",
                        "costovertebral_tenderness"])
@@ -154,7 +156,11 @@ def candidates(p, adm):
     before = dt.timedelta(days=p.iwp_before)
     after = dt.timedelta(days=p.iwp_after)
     for date, source, orgs in adm.cultures:
+        if source == "blood" and len(set(orgs)) >= CONTAM_MIN:
+            continue                      # disregarded as contamination
         found = pathogens(orgs)
+        if source == "urine":
+            found = [o for o in found if o not in YEASTS]
         if not found:
             continue
         if source == "blood":
@@ -165,7 +171,8 @@ def candidates(p, adm):
                 doe = date if p.doe_rule == "culture" else min(date, signs[0])
                 out.append(("UTI", date, doe, found))
 
-    blood = [(t, commensals(o)) for t, s, o in adm.cultures if s == "blood"]
+    blood = [(t, commensals(o)) for t, s, o in adm.cultures
+             if s == "blood" and len(set(o)) < CONTAM_MIN]
     seen = set()
     for i, (t1, c1) in enumerate(blood):
         for t2, c2 in blood[i + 1:]:
@@ -294,67 +301,169 @@ def want_skeleton(a):
                  for kind in ("uti", "bsi"))
 
 
-def recover(audit, max_wrong=5):
-    """The setting of the constants that explains the most of the audit.
+def months_of(doc):
+    lo, hi = d(doc["period_start"]), d(doc["period_end"])
+    out, cur = [], lo.replace(day=1)
+    while cur < hi:
+        out.append("%04d-%02d" % (cur.year, cur.month))
+        cur = (cur.replace(day=28) + dt.timedelta(days=4)).replace(day=1)
+    return out
 
-    Not "reproduces all of it": some entries are wrong, and which ones is not
-    recorded, so the fit has to be robust. Two things follow, and both matter.
 
-    A setting that reproduces every entry does not exist, so a search that
-    demands one finds nothing. And a search that instead relaxes a constant
-    until the last stubborn entry fits will land on a setting that explains a
-    corrupted row and gets the held-out quarter wrong -- which is exactly what
-    an auditor's slip looks like if you treat it as data. What is wanted is the
-    setting with the highest agreement, and a check that it wins outright.
+def tally(reports):
+    """(ward, month) -> [urinary events, bloodstream events, of which line-
+    associated]. This is all the audit publishes: no patient, no date, no
+    organism, only how many of each fell in each ward in each month."""
+    cells = {}
+    for r in reports:
+        for kind in ("uti", "bsi"):
+            for e in r[kind]:
+                cell = cells.setdefault((e["ward"], e["date_of_event"][:7]),
+                                        [0, 0, 0])
+                cell[0 if kind == "uti" else 1] += 1
+                if kind == "bsi" and e["central_line_associated"]:
+                    cell[2] += 1
+    return cells
 
-    The staged structure survives, with the early exit replaced by a bound: the
-    three constants that only decide an event's ward and line flag cannot lift
-    agreement above what the dates and organisms already allow, so any (pool,
-    walk) setting whose skeleton agreement is below the incumbent is skipped
-    whole.
+
+def summary(doc, reports):
+    cells = tally(reports)
+    return [{"ward": w, "month": m,
+             "uti_events": cells.get((w, m), (0, 0, 0))[0],
+             "bsi_events": cells.get((w, m), (0, 0, 0))[1],
+             "central_line_associated": cells.get((w, m), (0, 0, 0))[2]}
+            for w in doc["wards"] for m in months_of(doc)]
+
+
+def recover(audit, max_wrong=4):
+    """The setting of the constants that explains the most of the published
+    summary.
+
+    The audit does not publish adjudications. It publishes what a surveillance
+    programme publishes: for each ward and each month, how many urinary events,
+    how many bloodstream events, and how many of those were line-associated.
+    Sixty admissions collapse into forty-five numbers, and that changes the
+    problem in two ways.
+
+    A mismatch no longer points anywhere. There is no patient to open, no date
+    to compare, no organism list to diff: a cell that is one too high says only
+    that something, somewhere in that ward and month, was adjudicated
+    differently -- by a wrong constant, or by a rule of this procedure being
+    read wrongly, and nothing distinguishes those two. Fitting cannot be turned
+    into debugging.
+
+    And a few of the published numbers are wrong. No setting reproduces the
+    whole table, so a search demanding one finds nothing; what is wanted is the
+    setting matching the most cells, and a check that it wins outright.
+
+    The staging survives because of what each constant can reach. Five decide
+    which candidates exist, so pools are built once per setting of those five.
+    Four more decide which are reported and when, which fixes the month totals.
+    The last three decide only ward and line association, so they cannot change
+    a month total -- which gives the bound: a setting whose month totals already
+    disagree with the published ones in k places can match at most k fewer
+    cells, however its last three constants are chosen, and is skipped whole.
     """
-    want = {a["id"]: a for a in audit["adjudications"]}
+    published = {(c["ward"], c["month"]):
+                 (c["uti_events"], c["bsi_events"],
+                  c["central_line_associated"]) for c in audit["summary"]}
+    keys = sorted(published)
+    total = 3 * len(keys)
+    months = months_of(audit)
+    pub_month = {}
+    for i, kind in enumerate(("uti", "bsi")):
+        for m in months:
+            pub_month[(kind, m)] = sum(v[i] for k, v in published.items()
+                                       if k[1] == m)
+
     order = list(audit["patients"])
     admissions = {pt["id"]: [Admission(a) for a in pt["admissions"]]
                   for pt in order}
-    want_skel = {pid: want_skeleton(a) for pid, a in want.items()}
-    floor = len(order) - max_wrong
+    floor = total - max_wrong
 
     best, found = floor, []
     for pool_combo in itertools.product(*(list(GRID[f]) for f in POOL_FIELDS)):
         base = dict(zip(POOL_FIELDS, pool_combo))
-        stub = Params(order="UTI", rit_days=10, sec_start="iwp", sec_len=10,
-                      line_min_days=2, line_grace=0, transfer_window=0, **base)
+        stub = Params(order="UTI", rit_days=min(GRID["rit_days"]),
+                      sec_start="iwp", sec_len=min(GRID["sec_len"]),
+                      line_min_days=min(GRID["line_min_days"]), line_grace=0,
+                      transfer_window=0, **base)
         pools = {pt["id"]: build_pool(stub, admissions[pt["id"]])
                  for pt in order}
 
         for walk_combo in itertools.product(*(list(GRID[f])
                                               for f in WALK_FIELDS)):
             mid = dict(base, **dict(zip(WALK_FIELDS, walk_combo)))
-            stub2 = Params(line_min_days=2, line_grace=0, transfer_window=0,
-                           **mid)
-            walks, fits = {}, []
+            stub2 = Params(line_min_days=min(GRID["line_min_days"]),
+                           line_grace=0, transfer_window=0, **mid)
+            events, got = [], {}
             for pt in order:
                 w = walk(stub2, pools[pt["id"]])
-                walks[pt["id"]] = w
-                if skeleton(w) == want_skel[pt["id"]]:
-                    fits.append(pt["id"])
-            if len(fits) < best:
+                for kind in ("UTI", "BSI"):
+                    for e in w[kind]:
+                        mon = iso(e["doe"])[:7]
+                        events.append((kind, e["adm"], e["doe"], mon))
+                        key = (kind.lower(), mon)
+                        got[key] = got.get(key, 0) + 1
+            miss = sum(1 for k, v in pub_month.items() if got.get(k, 0) != v)
+            if total - miss < best:
                 continue                    # cannot reach the incumbent
 
-            for trim_combo in itertools.product(*(list(GRID[f])
-                                                  for f in TRIM_FIELDS)):
-                p = Params(**dict(mid, **dict(zip(TRIM_FIELDS, trim_combo))))
-                agree = sum(1 for pid in fits
-                            if dress(p, pid, walks[pid]) == want[pid])
-                if agree > best:
-                    best, found = agree, [p]
-                elif agree == best and found:
-                    found.append(p)
-    assert found, ("no setting explains at least %d of the %d audit entries"
-                   % (floor, len(order)))
-    assert len(found) == 1, ("%d settings each explain %d entries; the audit "
-                             "does not single one out" % (len(found), best))
+            # The last three constants only move an event between two known
+            # wards and flip one boolean, so reduce every event to the integers
+            # those two decisions turn on and let the loops below be
+            # arithmetic. Without this the bound above is the only prune and it
+            # is far too weak: there are just two trim-independent totals per
+            # month, so almost nothing is skipped and the whole product gets
+            # scored.
+            table = []
+            for kind, adm, doe, mon in events:
+                arrive, ward = adm.ward_on(doe)
+                prev = None
+                if arrive is not None:
+                    _a, prev = adm.ward_on(arrive - dt.timedelta(days=1))
+                gap = (doe - arrive).days if arrive is not None else None
+                table.append((kind == "BSI", mon, ward, prev, gap,
+                              [((doe - i).days, (doe - r).days)
+                               for i, r in adm.lines]))
+
+            for tw in GRID["transfer_window"]:
+                counts, wards = {}, []
+                for is_bsi, mon, ward, prev, gap, _lines in table:
+                    w = prev if (prev is not None and gap is not None
+                                 and gap <= tw) else ward
+                    wards.append(w)
+                    cell = counts.setdefault((w, mon), [0, 0])
+                    cell[1 if is_bsi else 0] += 1
+                flat = 0
+                for k in keys:
+                    have = counts.get(k, (0, 0))
+                    flat += sum(1 for i in (0, 1) if have[i] == published[k][i])
+                if flat + len(keys) < best:
+                    continue            # the line flags cannot make up the rest
+                for lm in GRID["line_min_days"]:
+                    for lg in GRID["line_grace"]:
+                        assoc = {}
+                        for j, row in enumerate(table):
+                            if row[0] and any(di >= lm - 1 and dr <= lg
+                                              for di, dr in row[5]):
+                                key = (wards[j], row[1])
+                                assoc[key] = assoc.get(key, 0) + 1
+                        agree = flat + sum(
+                            1 for k in keys
+                            if assoc.get(k, 0) == published[k][2])
+                        if agree < best:
+                            continue
+                        p = Params(line_min_days=lm, line_grace=lg,
+                                   transfer_window=tw, **mid)
+                        if agree > best:
+                            best, found = agree, [p]
+                        elif found:
+                            found.append(p)
+    assert found, ("no setting matches at least %d of the %d published cells"
+                   % (floor, total))
+    assert len(found) == 1, ("%d settings each match %d cells; the summary does "
+                             "not single one out" % (len(found), best))
     return found[0]
 
 

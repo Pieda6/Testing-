@@ -4,10 +4,10 @@ This excerpt is authoritative for the reporting period. Where it differs from
 any other surveillance manual you may be familiar with, this excerpt governs.
 
 **The numbered constants have been withheld.** Every place one belongs is
-marked `[[?]]`. This copy came from the state programme with them redacted; the
-adjudications in `audited.json` were produced under the complete manual and
-validated, so the values are recoverable from those. Do not assume the values
-used by any surveillance system you already know — several of them differ here.
+marked `[[?]]`. This copy came from the state programme with them redacted. The
+quarterly summary in `audited.json` was produced under the complete manual, so
+the values are recoverable from it. Do not assume the values used by any
+surveillance system you already know — most of them differ here.
 
 ## 1. Terms
 
@@ -49,6 +49,10 @@ commensal alone.
 
 A single blood culture growing only commensals is not a candidate.
 
+**Contamination.** A blood culture growing three or more distinct organism names
+is disregarded in full: it yields no BSI-P candidate, its organisms are ignored,
+and it may not serve as either culture of a BSI-C pair.
+
 ## 3. Candidate urinary tract infections
 
 A **UTI candidate** is a urine culture growing at least one recognised pathogen,
@@ -56,6 +60,11 @@ together with at least one of `fever`, `dysuria`, `urgency`,
 `suprapubic_tenderness` or `costovertebral_tenderness` recorded during the same
 admission on a date inside the infection window period. Its anchor date is that
 culture's date. Its organisms are the recognised pathogens on that culture.
+
+**Urinary eligibility.** Organisms of the genus *Candida* are recognised
+pathogens in blood but are not eligible for a urinary event. They are excluded
+from a UTI candidate's organisms, and a urine culture whose only recognised
+pathogens are *Candida* is not a candidate at all.
 
 ## 4. Infection window period
 
@@ -145,7 +154,16 @@ event to the ward occupied on the day before `A`; if that ward does not exist
 because `A` is the admit date, attribute the event to the ward occupied on `d`.
 Otherwise attribute the event to the ward occupied on `d`.
 
-## 13. Central line days
+## 13. Quarterly summary
+
+The programme publishes, for each ward and each calendar month of the reporting
+period, three counts: the number of reported urinary events, the number of
+reported bloodstream events, and how many of those bloodstream events were
+central-line-associated. An event is counted in the month of its date of event
+and against the ward it was attributed to under §12. Nothing else is published:
+no patient, no date, no organism.
+
+## 14. Central line days
 
 For each ward, the number of (patient, calendar day) pairs for which the patient
 occupied that ward on that day and had a central line in place on that day,
