@@ -23,12 +23,25 @@ not diagnosis or treatment.
     solution/solve.sh               oracle entrypoint
     solution/solve.py               reference adjudicator, standard library only
     tests/test.sh                   verifier entrypoint, writes reward.txt and ctrf.json
+    tests/pytest.ini                pinned config, so rootdir cannot be hijacked
     tests/test_outputs.py           the two graded criteria
     tests/expected.json             answer key plus patient and ward order
 
 `tests/` is overlaid at `/tests` only at verification time. Nothing in it ever
 reaches the agent image, and `environment/Dockerfile` never copies `solution/`
 or `tests/`.
+
+The entrypoint is hardened so a submission cannot grade itself. Harbor runs it
+with the agent's own directory as the working directory, and CPython puts the
+working directory first on the import path — so a `json.py` the agent wrote gets
+imported inside the verifier. Planting one confirmed it: the previous entrypoint
+executed it. Now the entrypoint runs from a fresh directory of its own, `python3
+-I` keeps the working directory and the user site off `sys.path` and ignores
+every `PYTHON*` variable, `-c` and `--confcutdir` pin the config and conftest
+search to `tests/`, the cache provider is off, and both output files are deleted
+before being written so a symlink in their place is removed rather than followed.
+Re-measured against the real container layout: correct answer 1, wrong answer 0,
+planted module not imported, symlinked `reward.txt` replaced.
 
 ## What makes it hard
 
