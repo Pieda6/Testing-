@@ -1,5 +1,5 @@
 `/app` holds the `greet` project: a small C library, a CLI that links it, and a
-`Makefile` that packages a release bundle at `dist/greet-1.4.2.tar.gz`.
+`Makefile` that packages a release bundle at `/app/dist/greet-1.4.2.tar.gz`.
 
 The build is not reproducible. Rebuild it on another machine and you get
 different bytes, so nobody can check that the published bundle really came from
@@ -35,17 +35,18 @@ The bundle is a release, and it still has to be one.
    with one source string altered, and that bundle must come out *different*.
    Freezing the artifact, emptying it, or committing a copy and installing that
    are all rejected.
-2. **It must still contain everything.** `bin/greet`, `lib/libgreet.a`,
-   `include/greet.h`, `share/manifest.txt`, all seven files under
-   `share/docs/`, `VERSION` and `CHANGELOG.md` — those paths being relative to
-   a single top-level `greet-VERSION/` directory inside the archive.
-3. **The binary must stay debuggable.** `bin/greet` must keep its
+2. **It must still contain everything.** The archive unpacks into a single
+   top-level `greet-VERSION` directory, and inside it: `greet` under `bin`,
+   `libgreet.a` under `lib`, `greet.h` under `include`, `manifest.txt` under
+   `share`, all seven documentation files in the `docs` directory under
+   `share`, and `VERSION` and `CHANGELOG.md` at the top.
+3. **The binary must stay debuggable.** The packaged `greet` must keep its
    `.debug_info`. Discarding debug information is not an acceptable way to keep
    the build directory out of the artifact.
 4. **The CLI must behave as it does now**, with one correction: the version
    banner currently reports the day it was compiled, which is exactly the sort
-   of thing that must go. It must report the release date from `/app/CHANGELOG.md`
-   instead:
+   of thing that must go. It must report the release date recorded in
+   `/app/CHANGELOG.md` instead:
 
         $ greet --version
         greet 1.4.2 (built 2024-11-05)
@@ -57,9 +58,10 @@ The bundle is a release, and it still has to be one.
 ## Working notes
 
 Change whatever you need to under `/app` — the `Makefile`, the scripts in
-`tools/`, the sources. Leave the project working: `make` from a clean tree must
-build everything and produce the bundle, and `make clean` must still remove
+`/app/tools`, the sources. Leave the project working: `make` from a clean tree
+must build everything and produce the bundle, and `make clean` must still remove
 what it made. Write nothing outside `/app`.
 
-`build/`, `stage/`, `dist/` and `src/buildinfo.h` are outputs, not inputs. They
+`/app/build`, `/app/stage`, `/app/dist` and `/app/src/buildinfo.h` are outputs,
+not inputs. They
 are removed before each graded rebuild, so anything you leave there is ignored.

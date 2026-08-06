@@ -90,6 +90,20 @@ def check_markdown(root):
             continue
         text = read(path)
         first = text.splitlines()[0] if text.splitlines() else ""
+        if rel == "instruction.md":
+            # The upstream static check rejects any path in instruction.md that
+            # is not absolute under /app, and rejects it as a FAIL. It caught
+            # three on task8 and cost a review round-trip, so this is a failure
+            # here too rather than a note. Paths inside an archive or another
+            # container have no /app form -- name their parts separately.
+            relpaths = sorted(set(
+                t for t in re.findall(r"`([^`]+)`", text)
+                if "/" in t and not t.startswith(("/", "http", "$"))))
+            if relpaths:
+                fail("instruction_absolute_paths",
+                     "relative paths (must be absolute under /app, or reworded "
+                     "if they name something inside an archive): %s"
+                     % ", ".join(relpaths))
         if "user-attachments" in text:
             fail("instruction_concision",
                  "%s carries a GitHub upload link (drag-and-drop artifact); "
