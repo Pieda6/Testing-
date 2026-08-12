@@ -200,3 +200,60 @@ Stage order, and the aggregate gate reports each one:
 - Every claim in `task.toml` should be a measured number with a script behind
   it. Reviewers read those explanations closely, and a wrong figure there is a
   defect in the submission.
+
+## 8. Repairing a task that failed the difficulty gate
+
+From `repair-mpmc-ring`, which failed pass@2. It looked like the most elaborate
+task in the set: a 2,155-line verifier, a 10KB normative spec, eleven gated
+concurrency scenarios, a `difficulty_explanation` claiming batch ownership,
+stale-candidate races, wraparound, and shutdown races. It was solved because the
+shipped artifact was already right.
+
+- **Before theorising, run the shipped artifact against the shipped verifier.**
+  Nine of eleven scenarios passed as it stood. The two that failed were the same
+  conceptual defect in two symmetric places. Thirty seconds of measurement
+  replaced a day of guessing, and it also ruled out the other hypothesis —
+  flakiness — before any code was written.
+- **Then write the winning patch yourself, from the spec only.** A retry loop
+  around the ownership exchange, about fifty lines, scored full reward first
+  try. That is the difficulty gate's verdict, obtained locally in minutes
+  instead of a CI round trip. If a patch you can write in one pass scores 1, the
+  gate will say so too.
+- **A near-correct starting artifact is the characteristic failure of a repair
+  task.** The distance between what ships and what is correct *is* the task.
+  Nothing in `difficulty_explanation` changes that distance; the reference
+  solution's diff against the shipped file measures it. Here that diff was one
+  fix expressed twice, while the prose claimed six independent axes.
+- **A complete normative spec is a checklist, so difficulty has to come from
+  requirements that pull against each other.** The useful defects are the ones
+  where the natural repair of A violates B: a retry loop that re-fires a
+  once-only hook, a lock that makes `close()` block behind a stalled producer.
+  Build those wrong repairs and measure them. Two of the three forbidden repairs
+  here were things I would have written myself.
+- **Prefer defects that cannot be patched in place.** Ordered publication and
+  capacity-from-ownership each have to be replaced by a different mechanism, not
+  edited. That is what makes the intended solution a design rather than an edit,
+  and it is what survives a strong model rewriting the file from scratch.
+- **Check the verifier against the spec in both directions.** One scenario
+  required a stalled owner's successor to *complete*; the spec only promised it
+  would *acquire*. An implementation that did exactly what the spec said would
+  have been graded wrong — a false negative that reads as a verifier bug. Grading
+  stricter than the contract is as much a defect as grading looser.
+- **Some real violations cannot be graded, and planting them is worse than
+  leaving them out.** Three requirements — payload before publication, no
+  visible prefix of a batch, payload before release — were built as defects and
+  all scored 1, because the hook set has no observation point inside the
+  payload-and-publication window. Same shape as the `ar` flag in
+  reproducible-release-bundle: measured inert, documented, dropped. A defect the
+  harness cannot see is a requirement the agent need not meet.
+- **When the graded artifact is code the verifier compiles and runs, the
+  submission is inside the verifier's process.** A static initialiser calling
+  `std::_Exit(0)` passed all eleven scenarios. The fix is a token the verifier
+  chooses after the build and each scenario must echo on completion: exiting zero
+  is something the submission can do for itself, finishing the scenario is not.
+- **Measure flakiness instead of worrying about it.** Compile once, then run each
+  scenario hundreds of times, idle and with twice as many spinning processes as
+  cores. Worst case here was 0.07s against gates of 700ms — a 10× margin, and
+  proof that the gate failure was difficulty rather than a noisy runner. Timed
+  gates in a concurrency verifier are exactly where an oracle intermittently
+  fails its own tests, which the rubric rejects outright.
