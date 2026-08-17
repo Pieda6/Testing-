@@ -1,0 +1,5 @@
+# Only environment/data is needed in the build context. Nothing else here should
+# ever reach the image, and solution/ and tests/ live outside this directory.
+*
+!data
+!data/**

@@ -1,0 +1,9 @@
+# Keep the build context minimal: only data/samples.json and data/challenge.json
+# are needed.
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/.pytest_cache/
+**/.DS_Store
+**/*.swp
+*.tar.gz

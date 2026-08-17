@@ -1,0 +1,37 @@
+artifacts = ["/app/src/mpmc_ring.cpp"]
+
+[task]
+name = "dynamo/repair-mpmc-ring"
+description = "Repair a bounded MPMC ring whose publication model, capacity accounting, ownership revalidation, and close semantics all fail under gated concurrent schedules."
+
+[metadata]
+category = "Debugging and Repair"
+subcategory = "Concurrency and synchronization debugging"
+model_tested = "Opus-4.8"
+agent_tested = "Terminus-2"
+
+task_objective = ["fix", "debug"]
+artifact_type = ["codebase"]
+
+expert_time_estimate_hours = 6
+
+difficulty_explanation = "The shipped ring is the implementation a competent engineer writes first, and it passes ordinary use: independent atomic producer and consumer tickets, a publication frontier advanced in logical ticket order so consumers never see a hole, capacity taken as the distance between the reserve and consume tickets, and a compare-exchange to claim the range that was observed to be eligible. Every one of those four decisions is wrong under a schedule that stalls one operation and lets another overtake it, and two of them cannot be patched: publishing in ticket order means a producer whose payload work is finished waits for an earlier owner that is still stalled, so the fix is to separate completion from visibility with per-slot lifecycle state, and taking capacity from the consume ticket hands a slot to a new producer while its previous consumer is still holding the payload, so the fix is to track release rather than ownership. Runtime, storage, messaging, and low-latency engineers debug exactly this class of component, where locally plausible repairs produce duplicate or missing values, publication holes, premature reuse, global stalls, and shutdown races. Difficulty survives full disclosure of the contract: the specification states every requirement, and the work is satisfying them simultaneously. The obvious repair of the ownership race adds a retry loop that invokes the candidate hook again, which the contract forbids; the obvious repair of the close race takes a lock that close then blocks behind, which the contract also forbids. Grading is all-or-nothing across eleven behavioural scenarios, so finding five of the six defects scores the same as finding none."
+
+solution_explanation = "Keep the fixed-capacity storage model and give each physical slot a lifecycle sequence that says which logical ticket may use it next, so a slot is free for a producer only after the consumer that owned its previous value has obtained that payload and released it. Treat eligibility, ownership, publication, consumption, and release as distinct transitions. The candidate observation consumes no ticket, invokes its hook at most once per public call, and must run with no synchronization held that would block a competing operation or close. After the hook returns, re-read the frontier and revalidate: if another operation took the observed range, reserve a later range that is still eligible rather than failing because of being overtaken. Serialize only the short transition that validates and advances a complete logical range, never the hook or the payload work. Write every payload before publishing, then mark the range published from its last ticket back to its first, so a consumer at the frontier cannot see a proper prefix and a later range that finished first is complete without being visible. Consumers acquire their whole requested range or nothing, obtain every payload before releasing any slot, and release only after the values are in hand. Close shares the ownership transition boundary with producers so it may defeat a candidate that owns nothing but cannot revoke an owned range, and it is never held waiting on a hook. Decide full and empty by modular ticket distance so the answers hold across the physical, signed, and unsigned boundaries."
+
+verification_explanation = "The verifier reads only the declared artifact, opening it with O_NOFOLLOW, requiring a regular file, and capping its size, then compiles it against a trusted copy of the public header with -std=c++20, -Wall -Wextra -Wpedantic -Werror, and the undefined-behaviour sanitizer set to halt on the first report. Eleven deterministic scenarios follow, each driven by explicit condition-variable gates rather than random stress: constructor and batch-size validation, single and batch FIFO, all-or-nothing failed pushes and pops, an empty ring reporting empty across unsigned wraparound, repeated slot reuse across the signed and unsigned ticket boundaries, progress while a producer is stalled after ownership, progress while a consumer is stalled after ownership, close preserving an already-owned batch, reuse waiting for the prior consumer's release, producer and consumer candidate overtaking with hook cardinality and range metadata checked, close defeating a producer stalled before ownership, and mixed multi-producer/multi-consumer exact-once delivery. Because the submission is compiled into the harness process, exiting successfully is something it could do for itself, so each scenario must echo a token the verifier chooses after the build; a process that exits without completing the scenario fails. Scenario timeouts are deadlock guards, not the source of difficulty: the reference solution's slowest scenario is under a tenth of a second against gates of seven hundred milliseconds and more, measured over hundreds of runs with every core saturated. Grading is behavioural, so many different correct implementations pass and no source pattern is required. Measured: the reference solution scores 1; the shipped tree scores 0; each of the six planted defects, applied alone to the reference, scores 0; each of the three repairs the contract forbids scores 0; and a ring that refuses every operation, never calls its hooks, holds its reservation across the hooks, exits the harness early, is missing, or is a symlink all score 0."
+
+[verifier]
+timeout_sec = 300.0
+
+[agent]
+timeout_sec = 3600.0
+
+[environment]
+build_timeout_sec = 600.0
+cpus = 4
+memory_mb = 2048
+storage_mb = 10240
+gpus = 0
+allow_internet = true
+mcp_servers = []

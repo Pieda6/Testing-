@@ -1,0 +1,34 @@
+artifacts = ["/app/normalized.json"]
+
+[task]
+name = "dynamo/headerless-pcm-normalize"
+description = "Recover the lost sample format of every file in a headerless raw-PCM archive and normalize the whole archive to one canonical encoding."
+
+[metadata]
+# --- pre-seeded by the Dynamo team; DO NOT MODIFY ---
+category = "Data Processing and ETL"
+subcategory = "Media data processing"
+# --- fellow-set ---
+task_objective = ["transform"]
+artifact_type = ["generated_output_artifact"]
+expert_time_estimate_hours = 3.0
+model_tested = "Opus-4.8"
+agent_tested = "Terminus-2"
+difficulty_explanation = "This is media ingest engineering: the person who has to make a broadcaster's or a research lab's legacy tape-transfer archive readable after a migration stripped the WAV headers and lost the sidecar metadata. Headerless raw PCM is a real and common failure mode, and getting it wrong corrupts an archive silently and permanently. The work is genuinely hard for four reasons, all measured on the shipped archive of 42 assets. First, there is no metadata and no header to parse, so byte order, signedness and channel layout have to be inferred from the audio itself, and every wrong choice decodes without raising anything -- assuming the overwhelming default of little-endian signed interleaved recovers only 8 of 42 files. Second, the inference has to rest on a real property of audio rather than a guess. Captures are heavily oversampled, so consecutive samples differ by a tiny fraction of the waveform's range; a byte-swapped decode promotes the low byte to the high byte and destroys that, and a signedness error wraps the waveform around the integer boundary. One case resists this: a planar file read as interleaved only about doubles the roughness, a margin that narrows to 1.5x here, so the reading has to be separated another way -- those two channels are the even and odd samples of one waveform and correlate at ~1.0, which real stereo never does. Third, 17 of the 42 assets kept a fragment of their original header, under 64 bytes, at the front. The length is recoverable by arithmetic, but an agent that never considers it decodes the whole file one offset out and still produces something that looks like audio: that failure mode scores 25 of 42. Fourth, the canonical conversion is bit-exact and the digest is unforgiving. Truncating the 24-bit and 32-bit downshifts toward zero instead of arithmetically changes only negative samples and sounds identical, and scores 18 of 42; leaving the canonical bytes in their source planar order scores 14 of 42. Grading is all-or-nothing across all 42 files, so each of those near-misses scores 0. The corpus is synthetic, generated deterministically from a fixed seed."
+solution_explanation = "Two of the five unknowns fall out of arithmetic. The payload occupies frames x channels x width bytes and any surviving header fragment is under 64 bytes, so for each candidate width the leftover is forced; because the widths are thousands of bytes apart only one leaves a leftover in range, which pins the sample width and the fragment length together. The other three come from the signal. Enumerate the remaining interpretations -- at most eight, since byte order is meaningless for 8-bit files and layout is meaningless for mono -- decode each, de-interleave, and score by mean absolute first difference per channel normalised by that channel's range. The correct reading is a clear minimum: the median separation from the runner-up is 2.6x. For planar stereo the margin alone is thin, so reject any reading whose two channels correlate above 0.99, which is exactly the signature of a planar file misread as interleaved. Then convert: subtract half full scale if the source was unsigned, multiply 8-bit by 256, shift 24-bit right by 8 and 32-bit right by 16 arithmetically, and write the samples interleaved as signed 16-bit little-endian whatever the source layout was. Record the SHA-256 of those bytes. The reference solver is pure Python plus numpy, uses no randomness, and processes the whole archive in about 0.2 s, so the binding constraint is the reasoning rather than the clock and a wrong answer is a finished wrong answer rather than a timeout."
+verification_explanation = "Ground truth -- the true format of every asset and the SHA-256 of its canonical bytes -- lives in tests/expected.json, which is overlaid only at verification time and is never copied into the agent image, so the answers are unreachable from inside the task. The digest is what makes the grade airtight: labelling a format correctly is not sufficient, the agent must actually have produced the canonically converted bytes, and one sample rounded the wrong way changes the digest completely. There is no tolerance to calibrate because the target is a bit-exact digest. The verifier also pins the output schema strictly -- one entry per asset in manifest order, exact field set, bit_depth and preamble_bytes as JSON integers with booleans rejected (bool is an int subclass in Python), signed as a JSON boolean, endianness and layout drawn from their permitted values, and the digest matched against a 64-character lowercase hex pattern -- and reads the result with O_NOFOLLOW so a symlinked output path cannot alias another file. Grading is all-or-nothing across all 42 assets. Measured: oracle 1.0, nop 0, and 0 for each of assuming little-endian signed interleaved, ignoring the header fragments, truncating downshifts toward zero, leaving canonical bytes planar, a 41-of-42 near-miss, a reordered array, a dropped entry, an integer in place of the boolean, a float bit_depth, an uppercase digest, and a symlinked output path."
+
+[verifier]
+timeout_sec = 120.0
+
+[agent]
+timeout_sec = 3600.0
+
+[environment]
+build_timeout_sec = 600.0
+cpus = 2
+memory_mb = 4096
+storage_mb = 10240
+gpus = 0
+allow_internet = true
+mcp_servers = []

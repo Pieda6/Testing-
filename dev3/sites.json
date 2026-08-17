@@ -1,0 +1,25 @@
+{
+  "sites": [
+    "hq",
+    "annex",
+    "lab"
+  ],
+  "travel_min": {
+    "hq": {
+      "hq": 0,
+      "annex": 30,
+      "lab": 45
+    },
+    "annex": {
+      "hq": 30,
+      "annex": 0,
+      "lab": 60
+    },
+    "lab": {
+      "hq": 45,
+      "annex": 60,
+      "lab": 0
+    }
+  },
+  "remote_switch_min": 15
+}
